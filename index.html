@@ -469,12 +469,20 @@
     let supabaseClient = null;
     try { supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) {}
 
-    // 读取专属链接来源参数 ?s=xxx（推荐人/渠道标识），随提交记录一起入库
-    const sourceCode = (new URLSearchParams(location.search).get("s") || "").trim().slice(0, 50);
-    if (sourceCode) {
-      const hint = document.getElementById("sourceHint");
-      hint.textContent = "推荐人：" + sourceCode;
-      hint.style.display = "block";
+    // 读取专属链接来源参数 ?c=xxx（助教专属邀请码，URL 中不暴露助教姓名），随提交记录一起入库
+    // 通过 code 反查 assistants 表得到助教姓名，作为 source 保存（便于后台按助教统计）
+    const inviteCode = (new URLSearchParams(location.search).get("c") || "").trim().slice(0, 50);
+    let sourceCode = ""; // 助教姓名，提交时写入 source
+    if (inviteCode) {
+      // 异步反查助教（不阻塞页面使用）
+      if (supabaseClient) {
+        supabaseClient.from('assistants').select('name').eq('code', inviteCode).maybeSingle()
+          .then(({ data, error }) => {
+            if (!error && data && data.name) {
+              sourceCode = data.name;
+            }
+          }).catch(() => {});
+      }
     }
 
     const abilities = [
@@ -934,7 +942,7 @@
       ctx.fillText(`${name}的生命彩虹图`, cssWidth / 2, isNarrow ? 12 : 18);
     }
 
-    document.getElementById("generateBtn").addEventListener("click", () => {
+    document.getElementById("generateBtn").addEventListener("click", async () => {
       const name = document.getElementById("childName").value.trim();
       if (!name) {
         const nameInput = document.getElementById("childName");
@@ -1016,6 +1024,11 @@
       submitStatus.textContent = "正在保存测试记录...";
 
       if (supabaseClient) {
+        // 若通过专属链接进入且 sourceCode 尚未反查完成，则在此同步补查一次（保险）
+        if (inviteCode && !sourceCode) {
+          const { data: a } = await supabaseClient.from('assistants').select('name').eq('code', inviteCode).maybeSingle();
+          if (a && a.name) sourceCode = a.name;
+        }
         supabaseClient.from('submissions').insert({
           child_name: name,
           phone: phone,

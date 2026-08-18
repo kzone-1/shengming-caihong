@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>助教工作台 - 生命彩虹图</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: #f0f2f5;
+      color: #333;
+    }
+    .login-wrap {
+      max-width: 420px;
+      margin: 80px auto;
+      background: #fff;
+      border-radius: 14px;
+      padding: 36px 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .login-wrap h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      color: #0d7377;
+      text-align: center;
+    }
+    .login-wrap .sub {
+      text-align: center;
+      color: #999;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+    .login-wrap input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      margin-bottom: 14px;
+    }
+    .login-wrap button {
+      width: 100%;
+      padding: 12px;
+      background: #0d7377;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .login-wrap button:hover { background: #094f52; }
+    .login-error {
+      color: #e63946;
+      font-size: 14px;
+      margin-bottom: 12px;
+      display: none;
+      text-align: center;
+    }
+
+    .dash { display: none; }
+    .dash-header {
+      background: #fff;
+      padding: 16px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .dash-header h1 {
+      margin: 0;
+      font-size: 20px;
+      color: #0d7377;
+    }
+    .dash-header .who { font-size: 13px; color: #999; }
+    .dash-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .dash-actions button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-export { background: #28a745; color: #fff; }
+    .btn-export:hover { background: #218838; }
+    .btn-refresh { background: #17a2b8; color: #fff; }
+    .btn-refresh:hover { background: #138496; }
+    .btn-logout { background: #e9ecef; color: #333; }
+    .btn-logout:hover { background: #dde2e6; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      margin: 20px 24px;
+      padding: 20px 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 16px;
+      color: #0d7377;
+      border-left: 4px solid #0d7377;
+      padding-left: 10px;
+    }
+    .link-box {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .link-box input {
+      flex: 1;
+      min-width: 280px;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: monospace;
+      background: #f8f9fa;
+    }
+    .btn-copy {
+      padding: 10px 18px;
+      background: #0d7377;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-copy:hover { background: #094f52; }
+    .link-hint {
+      font-size: 12px;
+      color: #999;
+      margin-top: 8px;
+    }
+    .stats-bar { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
+    .stat-card {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 12px 18px;
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+    }
+    .stat-card .label { font-size: 12px; color: #999; }
+    .stat-card .value { font-size: 24px; font-weight: 700; color: #0d7377; }
+
+    .table-container {
+      background: #fff;
+      border-radius: 12px;
+      margin: 0 24px 24px;
+      overflow-x: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 700px;
+    }
+    th, td {
+      padding: 10px 8px;
+      text-align: center;
+      border-bottom: 1px solid #f0f0f0;
+      white-space: nowrap;
+    }
+    th { background: #f8f9fa; font-weight: 700; color: #555; }
+    tr:hover { background: #f8f9fa; }
+    .talent-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .talent-badge.shuai { background: #e74c3c; }
+    .talent-badge.jiang { background: #3498db; }
+    .talent-badge.hui { background: #2ecc71; }
+    .empty-msg { text-align: center; padding: 40px 20px; color: #999; }
+    .avg-cell { background: #fff9e6; font-weight: 700; }
+    .score-high { color: #27ae60; font-weight: 700; }
+    .score-low { color: #e74c3c; font-weight: 700; }
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0d7377;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      z-index: 999;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="toast" id="toast"></div>
+
+  <!-- 助教登录 -->
+  <div class="login-wrap" id="loginWrap">
+    <h1>助教工作台</h1>
+    <div class="sub">请输入你的姓名和手机号，进入专属工作台</div>
+    <div class="login-error" id="loginError">姓名或手机号不对，请核对后重试（需联系管理员先录入）</div>
+    <input type="text" id="assistName" placeholder="你的姓名" />
+    <input type="tel" id="assistPhone" placeholder="你的手机号" maxlength="11" inputmode="numeric" />
+    <button id="loginBtn">进入工作台</button>
+  </div>
+
+  <!-- 工作台 -->
+  <div class="dash" id="dash">
+    <div class="dash-header">
+      <div>
+        <h1>助教工作台</h1>
+        <div class="who" id="whoLabel"></div>
+      </div>
+      <div class="dash-actions">
+        <button class="btn-refresh" id="refreshBtn">刷新</button>
+        <button class="btn-export" id="exportBtn">导出我的客户 CSV</button>
+        <button class="btn-logout" id="logoutBtn">退出</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>我的专属推荐链接</h2>
+      <div class="link-box">
+        <input type="text" id="myLink" readonly />
+        <button class="btn-copy" id="copyBtn">复制链接</button>
+      </div>
+      <div class="link-hint">把这条链接发给家长，家长打开后提交的测评结果会自动归到你的名下。链接已隐藏你的姓名，请放心转发。</div>
+      <div class="stats-bar" id="statsBar"></div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>序号</th>
+            <th>孩子姓名</th>
+            <th>手机号</th>
+            <th>贵人力</th>
+            <th>幸福力</th>
+            <th>沟通力</th>
+            <th>效能力</th>
+            <th>自控力</th>
+            <th>主角力</th>
+            <th>专注力</th>
+            <th>创富力</th>
+            <th>抗挫力</th>
+            <th>亲和力</th>
+            <th>学习力</th>
+            <th>领导力</th>
+            <th>平均分</th>
+            <th>天赋类型</th>
+            <th>提交时间</th>
+          </tr>
+        </thead>
+        <tbody id="recordsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://xviogqxhmptrrogsqmgk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aW9ncXhobXB0cnJvZ3NxbWdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0Mzk4MzgsImV4cCI6MjEwMjAxNTgzOH0.wi9qS0rBJuOtAOD14vxpfTh2rh0dzzJQRNKEcwrx5QE';
+    let supabaseClient = null;
+    try { supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) {}
+
+    const ABILITY_NAMES = ["贵人力","幸福力","沟通力","效能力","自控力","主角力","专注力","创富力","抗挫力","亲和力","学习力","领导力"];
+
+    let myName = "";
+    let myCode = "";
+    let allMyRecords = [];
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.style.display = "block";
+      setTimeout(() => t.style.display = "none", 1800);
+    }
+
+    // 登录
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const name = document.getElementById("assistName").value.trim();
+      const phone = document.getElementById("assistPhone").value.trim();
+      if (!name || !phone) { document.getElementById("loginError").textContent = "请输入姓名和手机号"; document.getElementById("loginError").style.display = "block"; return; }
+      if (!supabaseClient) { document.getElementById("loginError").textContent = "数据库未配置，请联系管理员"; document.getElementById("loginError").style.display = "block"; return; }
+
+      try {
+        const { data, error } = await supabaseClient.from('assistants').select('*').eq('name', name).eq('phone', phone).maybeSingle();
+        if (error) throw error;
+        if (!data) {
+          document.getElementById("loginError").textContent = "姓名或手机号不对，请核对后重试（需联系管理员先录入）";
+          document.getElementById("loginError").style.display = "block";
+          return;
+        }
+        myName = data.name;
+        myCode = data.code;
+        document.getElementById("loginWrap").style.display = "none";
+        document.getElementById("dash").style.display = "block";
+        document.getElementById("whoLabel").textContent = "你好，" + myName;
+        // 生成专属链接
+        const base = location.origin + location.pathname.replace(/assistant\.html$/, "index.html");
+        document.getElementById("myLink").value = base + "?c=" + myCode;
+        loadMyRecords();
+      } catch (e) {
+        document.getElementById("loginError").textContent = "网络或系统错误，请重试";
+        document.getElementById("loginError").style.display = "block";
+      }
+    });
+
+    document.getElementById("assistPhone").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("loginBtn").click(); });
+
+    // 复制链接
+    document.getElementById("copyBtn").addEventListener("click", async () => {
+      const val = document.getElementById("myLink").value;
+      try {
+        await navigator.clipboard.writeText(val);
+        showToast("链接已复制");
+      } catch(e) {
+        const inp = document.getElementById("myLink");
+        inp.select(); document.execCommand("copy");
+        showToast("链接已复制");
+      }
+    });
+
+    // 加载我的记录（只显示 source = 自己姓名）
+    async function loadMyRecords() {
+      try {
+        const { data, error } = await supabaseClient.from('submissions').select('*').eq('source', myName).order('created_at', { ascending: false });
+        if (error) throw error;
+        allMyRecords = (data || []).map(r => ({
+          childName: r.child_name, phone: r.phone || '', scores: r.scores,
+          avgScore: r.avg_score, talentType: r.talent_type || '', submittedAt: r.created_at
+        }));
+        renderStats();
+        renderTable();
+      } catch(e) {
+        document.getElementById("recordsBody").innerHTML = '<tr><td colspan="18" class="empty-msg">加载失败，请重试</td></tr>';
+      }
+    }
+
+    function renderStats() {
+      const total = allMyRecords.length;
+      const today = new Date().toDateString();
+      const todayCount = allMyRecords.filter(r => new Date(r.submittedAt).toDateString() === today).length;
+      const shuai = allMyRecords.filter(r => r.talentType === "帅才").length;
+      const jiang = allMyRecords.filter(r => r.talentType === "将才").length;
+      const hui = allMyRecords.filter(r => r.talentType === "慧才").length;
+      document.getElementById("statsBar").innerHTML = `
+        <div class="stat-card"><div class="label">我的客户总数</div><div class="value">${total}</div></div>
+        <div class="stat-card"><div class="label">今日新增</div><div class="value">${todayCount}</div></div>
+        <div class="stat-card"><div class="label">帅才</div><div class="value" style="color:#e74c3c">${shuai}</div></div>
+        <div class="stat-card"><div class="label">将才</div><div class="value" style="color:#3498db">${jiang}</div></div>
+        <div class="stat-card"><div class="label">慧才</div><div class="value" style="color:#2ecc71">${hui}</div></div>
+      `;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById("recordsBody");
+      if (allMyRecords.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="18" class="empty-msg">还没有客户通过你的链接提交测评</td></tr>';
+        return;
+      }
+      tbody.innerHTML = allMyRecords.map((r, i) => {
+        const scoreCells = ABILITY_NAMES.map((_, idx) => {
+          const s = r.scores[idx] ?? "-";
+          const cls = s >= 8 ? "score-high" : (s <= 5 ? "score-low" : "");
+          return `<td class="${cls}">${s}</td>`;
+        }).join("");
+        const time = new Date(r.submittedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
+        const talentClass = r.talentType === "帅才" ? "shuai" : (r.talentType === "将才" ? "jiang" : "hui");
+        return `<tr>
+          <td>${i + 1}</td>
+          <td style="font-weight:600">${r.childName}</td>
+          <td style="font-family:monospace">${r.phone || "-"}</td>
+          ${scoreCells}
+          <td class="avg-cell">${r.avgScore.toFixed(1)}</td>
+          <td><span class="talent-badge ${talentClass}">${r.talentType}</span></td>
+          <td style="font-size:12px;color:#999">${time}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    document.getElementById("refreshBtn").addEventListener("click", loadMyRecords);
+
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      if (allMyRecords.length === 0) { showToast("暂无数据可导出"); return; }
+      const header = ["序号","孩子姓名","手机号","贵人力","幸福力","沟通力","效能力","自控力","主角力","专注力","创富力","抗挫力","亲和力","学习力","领导力","平均分","天赋类型","提交时间"];
+      const rows = allMyRecords.map((r, i) => {
+        const sc = ABILITY_NAMES.map((_, idx) => r.scores[idx] ?? "");
+        const time = new Date(r.submittedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
+        return [i+1, r.childName, r.phone || "", ...sc, r.avgScore.toFixed(1), r.talentType, time];
+      });
+      const csv = "\uFEFF" + [header, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = `我的客户_${myName}_${Date.now()}.csv`; a.click();
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      document.getElementById("dash").style.display = "none";
+      document.getElementById("loginWrap").style.display = "block";
+      document.getElementById("assistName").value = "";
+      document.getElementById("assistPhone").value = "";
+    });
+  </script>
+</body>
+</html>

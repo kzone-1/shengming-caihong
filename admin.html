@@ -94,6 +94,14 @@
     .btn-refresh:hover { background: #138496; }
     .btn-logout { background: #e9ecef; color: #333; }
     .btn-logout:hover { background: #dde2e6; }
+    .btn-tab {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
 
     .stats-bar {
       display: flex;
@@ -194,6 +202,11 @@
     <div class="dash-header">
       <h1>生命彩虹图测试记录</h1>
       <div class="dash-actions">
+        <button class="btn-tab" id="tabRecordsBtn" style="background:#0d7377;color:#fff;">客户记录</button>
+        <button class="btn-tab" id="tabAssistantsBtn" style="background:#e9ecef;color:#333;">助教管理</button>
+      </div>
+    </div>
+    <div class="dash-actions" id="recordsActions" style="padding:12px 24px 0;">
         <select id="sourceFilter" style="padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;background:#fff;">
           <option value="">全部来源</option>
         </select>
@@ -201,37 +214,68 @@
         <button class="btn-refresh" id="refreshBtn">刷新</button>
         <button class="btn-export" id="exportBtn">导出 CSV</button>
         <button class="btn-logout" id="logoutBtn">退出</button>
+    </div>
+    <div id="recordsView">
+      <div class="stats-bar" id="statsBar"></div>
+      <div class="table-container">
+        <table id="recordsTable">
+          <thead>
+            <tr>
+              <th>序号</th>
+              <th>孩子姓名</th>
+              <th>手机号</th>
+              <th>来源</th>
+              <th>贵人力</th>
+              <th>幸福力</th>
+              <th>沟通力</th>
+              <th>效能力</th>
+              <th>自控力</th>
+              <th>主角力</th>
+              <th>专注力</th>
+              <th>创富力</th>
+              <th>抗挫力</th>
+              <th>亲和力</th>
+              <th>学习力</th>
+              <th>领导力</th>
+              <th>平均分</th>
+              <th>天赋类型</th>
+              <th>提交时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="recordsBody"></tbody>
+        </table>
       </div>
     </div>
-    <div class="stats-bar" id="statsBar"></div>
-    <div class="table-container">
-      <table id="recordsTable">
-        <thead>
-          <tr>
-            <th>序号</th>
-            <th>孩子姓名</th>
-            <th>手机号</th>
-            <th>来源</th>
-            <th>贵人力</th>
-            <th>幸福力</th>
-            <th>沟通力</th>
-            <th>效能力</th>
-            <th>自控力</th>
-            <th>主角力</th>
-            <th>专注力</th>
-            <th>创富力</th>
-            <th>抗挫力</th>
-            <th>亲和力</th>
-            <th>学习力</th>
-            <th>领导力</th>
-            <th>平均分</th>
-            <th>天赋类型</th>
-            <th>提交时间</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="recordsBody"></tbody>
-      </table>
+
+    <!-- 助教管理视图 -->
+    <div id="assistantsView" style="display:none;">
+      <div style="margin:0 24px;">
+        <div style="background:#fff;border-radius:12px;padding:20px 24px;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin-bottom:20px;">
+          <h3 style="margin:0 0 14px;color:#0d7377;border-left:4px solid #0d7377;padding-left:10px;">新增助教</h3>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <input type="text" id="newAssistName" placeholder="助教姓名" style="padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;width:180px;" />
+            <input type="tel" id="newAssistPhone" placeholder="手机号" maxlength="11" inputmode="numeric" style="padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;width:180px;" />
+            <button id="addAssistBtn" style="padding:10px 18px;background:#28a745;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;">添加助教</button>
+          </div>
+          <div style="font-size:12px;color:#999;margin-top:8px;">添加后系统会自动生成一条专属邀请链接，助教用「姓名+手机号」登录工作台即可查看和转发。</div>
+        </div>
+        <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:800px;">
+            <thead>
+              <tr>
+                <th style="padding:10px 8px;text-align:center;background:#f8f9fa;border-bottom:1px solid #f0f0f0;">序号</th>
+                <th style="padding:10px 8px;text-align:center;background:#f8f9fa;border-bottom:1px solid #f0f0f0;">姓名</th>
+                <th style="padding:10px 8px;text-align:center;background:#f8f9fa;border-bottom:1px solid #f0f0f0;">手机号</th>
+                <th style="padding:10px 8px;text-align:center;background:#f8f9fa;border-bottom:1px solid #f0f0f0;">名下客户</th>
+                <th style="padding:10px 8px;text-align:center;background:#f8f9fa;border-bottom:1px solid #f0f0f0;">专属链接</th>
+                <th style="padding:10px 8px;text-align:center;background:#f8f9fa;border-bottom:1px solid #f0f0f0;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="assistantsBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -413,6 +457,115 @@
       } catch (e) {
         alert("删除失败，请重试");
       }
+    };
+
+    // ===== 助教管理 =====
+    // 页签切换
+    function showTab(which) {
+      const isRecords = which === "records";
+      document.getElementById("recordsView").style.display = isRecords ? "block" : "none";
+      document.getElementById("recordsActions").style.display = isRecords ? "flex" : "none";
+      document.getElementById("assistantsView").style.display = isRecords ? "none" : "block";
+      const rb = document.getElementById("tabRecordsBtn");
+      const ab = document.getElementById("tabAssistantsBtn");
+      rb.style.background = isRecords ? "#0d7377" : "#e9ecef";
+      rb.style.color = isRecords ? "#fff" : "#333";
+      ab.style.background = isRecords ? "#e9ecef" : "#0d7377";
+      ab.style.color = isRecords ? "#333" : "#fff";
+      if (!isRecords) loadAssistants();
+    }
+    document.getElementById("tabRecordsBtn").addEventListener("click", () => showTab("records"));
+    document.getElementById("tabAssistantsBtn").addEventListener("click", () => showTab("assistants"));
+
+    // 生成随机邀请码（8位字母数字，避免与姓名关联）
+    function genCode() {
+      const chars = "abcdefghjkmnpqrstuvwxyz23456789"; // 去掉易混淆的 0/1/i/l/o
+      let c = "";
+      for (let i = 0; i < 8; i++) c += chars[Math.floor(Math.random() * chars.length)];
+      return c;
+    }
+
+    // 加载助教列表 + 统计各自名下客户数
+    async function loadAssistants() {
+      const tbody = document.getElementById("assistantsBody");
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:40px;color:#999;">加载中...</td></tr>';
+      try {
+        const { data: assists, error: ae } = await supabaseClient.from('assistants').select('*').order('id');
+        if (ae) throw ae;
+        const { data: records, error: re } = await supabaseClient.from('submissions').select('source');
+        if (re) throw re;
+        // 统计每个来源的客户数
+        const countMap = {};
+        (records || []).forEach(r => { const s = r.source || ""; if (s) countMap[s] = (countMap[s] || 0) + 1; });
+
+        const base = location.origin + location.pathname.replace(/admin\.html$/, "index.html");
+        if (!assists || assists.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="padding:40px;color:#999;">还没有助教，请在上方添加</td></tr>';
+          return;
+        }
+        tbody.innerHTML = assists.map((a, i) => {
+          const link = base + "?c=" + a.code;
+          const count = countMap[a.name] || 0;
+          return `<tr>
+            <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;">${i + 1}</td>
+            <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;font-weight:600;">${a.name}</td>
+            <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;font-family:monospace;">${a.phone || "-"}</td>
+            <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;color:#0d7377;font-weight:700;">${count}</td>
+            <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">
+              <div style="display:flex;gap:6px;align-items:center;justify-content:center;">
+                <span style="font-family:monospace;font-size:12px;color:#666;background:#f8f9fa;padding:4px 8px;border-radius:4px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;">${link}</span>
+                <button onclick="copyAssistantLink('${a.code}')" style="padding:4px 10px;background:#17a2b8;color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer;">复制</button>
+              </div>
+            </td>
+            <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;">
+              <button onclick="deleteAssistant(${a.id})" style="padding:4px 10px;background:#fff;border:1px solid #e63946;color:#e63946;border-radius:4px;font-size:12px;cursor:pointer;">删除</button>
+            </td>
+          </tr>`;
+        }).join("");
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding:40px;color:#999;">加载失败，请重试</td></tr>';
+      }
+    }
+
+    // 新增助教
+    document.getElementById("addAssistBtn").addEventListener("click", async () => {
+      const name = document.getElementById("newAssistName").value.trim();
+      const phone = document.getElementById("newAssistPhone").value.trim();
+      if (!name) { alert("请输入助教姓名"); return; }
+      if (!/^\d{11}$/.test(phone)) { alert("请输入11位手机号"); return; }
+      // 生成唯一 code（若冲突则重试）
+      let code = genCode();
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const { data, error } = await supabaseClient.from('assistants').insert({ name, phone, code }).select().maybeSingle();
+        if (error) {
+          // code 冲突时重新生成
+          if (error.message && error.message.includes('duplicate')) { code = genCode(); continue; }
+          alert("添加失败：" + error.message); return;
+        }
+        document.getElementById("newAssistName").value = "";
+        document.getElementById("newAssistPhone").value = "";
+        loadAssistants();
+        return;
+      }
+      alert("添加失败，请重试");
+    });
+
+    // 删除助教
+    window.deleteAssistant = async function(id) {
+      if (!confirm("确定删除这位助教吗？其名下客户记录不会删除，但会失去来源归属。")) return;
+      try {
+        const { error } = await supabaseClient.from('assistants').delete().eq('id', id);
+        if (error) throw error;
+        loadAssistants();
+      } catch (e) { alert("删除失败，请重试"); }
+    };
+
+    // 复制助教链接
+    window.copyAssistantLink = async function(code) {
+      const base = location.origin + location.pathname.replace(/admin\.html$/, "index.html");
+      const link = base + "?c=" + code;
+      try { await navigator.clipboard.writeText(link); alert("链接已复制"); }
+      catch(e) { prompt("复制链接：", link); }
     };
   </script>
 </body>
