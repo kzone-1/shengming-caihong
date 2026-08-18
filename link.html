@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>助教专属链接 - 生命彩虹图</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(135deg, #f6d9e8 0%, #d9e9f7 50%, #e8f5e9 100%);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .card {
+      width: 100%; max-width: 420px; background: #fff; border-radius: 20px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.12); padding: 32px 28px; text-align: center;
+    }
+    .logo { font-size: 26px; margin-bottom: 8px; }
+    h1 { font-size: 20px; color: #333; margin-bottom: 6px; }
+    .sub { font-size: 13px; color: #888; margin-bottom: 24px; }
+    .field { text-align: left; margin-bottom: 16px; }
+    .field label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; font-weight: 600; }
+    .field input {
+      width: 100%; padding: 12px 14px; border: 1.5px solid #e0e0e0; border-radius: 10px;
+      font-size: 15px; outline: none; transition: border-color .2s;
+    }
+    .field input:focus { border-color: #ff8fab; }
+    .btn {
+      width: 100%; padding: 13px; border: none; border-radius: 10px; font-size: 16px; font-weight: 700;
+      cursor: pointer; color: #fff; background: linear-gradient(90deg, #ff8fab, #ff6b8a);
+      transition: transform .1s, opacity .2s; margin-top: 6px;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .err { color: #e63946; font-size: 13px; margin-top: 10px; display: none; }
+    .result { display: none; margin-top: 22px; border-top: 1px dashed #e5e5e5; padding-top: 22px; }
+    .result .hi { font-size: 15px; color: #333; margin-bottom: 14px; }
+    .result .hi b { color: #ff6b8a; }
+    .linkbox {
+      background: #f8f9fa; border: 1.5px dashed #ff8fab; border-radius: 10px;
+      padding: 14px; margin-bottom: 14px; word-break: break-all;
+      font-family: monospace; font-size: 13px; color: #444; line-height: 1.6; text-align: left;
+    }
+    .tip { font-size: 12px; color: #999; margin-top: 14px; line-height: 1.6; }
+    .back { margin-top: 14px; font-size: 13px; color: #999; }
+    .back a { color: #ff6b8a; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🌈</div>
+    <h1>助教专属链接</h1>
+    <div class="sub">输入您的姓名和手机号，即可获取专属链接</div>
+
+    <!-- 登录/验证表单 -->
+    <div id="loginWrap">
+      <div class="field">
+        <label>姓名</label>
+        <input id="nameInput" type="text" placeholder="请输入您的姓名" autocomplete="name">
+      </div>
+      <div class="field">
+        <label>手机号</label>
+        <input id="phoneInput" type="tel" placeholder="请输入报名手机号" autocomplete="tel" maxlength="11">
+      </div>
+      <button class="btn" id="getLinkBtn">获取我的专属链接</button>
+      <div class="err" id="loginErr"></div>
+    </div>
+
+    <!-- 结果：显示专属链接 -->
+    <div class="result" id="resultWrap">
+      <div class="hi">你好，<b id="whoName"></b>！这是你的专属链接：</div>
+      <div class="linkbox" id="linkText"></div>
+      <button class="btn" id="copyBtn">复制链接</button>
+      <div class="tip">把这条链接转发给家长，家长打开做测试后，<br>记录会自动归到你的名下。</div>
+      <div class="back"><a href="index.html">返回首页</a></div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://xviogqxhmptrrogsqmgk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aW9ncXhobXB0cnJvZ3NxbWdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0Mzk4MzgsImV4cCI6MjEwMjAxNTgzOH0.wi9qS0rBJuOtAOD14vxpfTh2rh0dzzJQRNKEcwrx5QE';
+    let supabaseClient = null;
+    try { supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) {}
+
+    const loginWrap = document.getElementById("loginWrap");
+    const resultWrap = document.getElementById("resultWrap");
+    const loginErr = document.getElementById("loginErr");
+
+    // 获取专属链接
+    document.getElementById("getLinkBtn").addEventListener("click", async () => {
+      const name = document.getElementById("nameInput").value.trim();
+      const phone = document.getElementById("phoneInput").value.trim();
+      loginErr.style.display = "none";
+
+      if (!name) { showErr("请输入姓名"); return; }
+      if (!/^\d{11}$/.test(phone)) { showErr("请输入11位手机号"); return; }
+
+      const btn = document.getElementById("getLinkBtn");
+      btn.disabled = true; btn.textContent = "验证中...";
+      try {
+        if (!supabaseClient) { showErr("服务连接失败，请刷新重试"); return; }
+        const { data, error } = await supabaseClient.from('assistants')
+          .select('name, phone, code').eq('name', name).eq('phone', phone).maybeSingle();
+        if (error) throw error;
+        if (!data || !data.code) { showErr("未找到您的信息，请联系管理员在后台添加后重试"); return; }
+
+        const base = location.origin + location.pathname.replace(/link\.html$/, "index.html");
+        const link = base + "?c=" + data.code;
+        document.getElementById("whoName").textContent = data.name;
+        document.getElementById("linkText").textContent = link;
+
+        loginWrap.style.display = "none";
+        resultWrap.style.display = "block";
+      } catch (e) {
+        showErr("验证失败，请重试");
+      } finally {
+        btn.disabled = false; btn.textContent = "获取我的专属链接";
+      }
+    });
+
+    // 复制链接
+    document.getElementById("copyBtn").addEventListener("click", async () => {
+      const link = document.getElementById("linkText").textContent;
+      try {
+        await navigator.clipboard.writeText(link);
+        const b = document.getElementById("copyBtn");
+        b.textContent = "✅ 已复制";
+        setTimeout(() => { b.textContent = "复制链接"; }, 1500);
+      } catch(e) {
+        prompt("复制链接：", link);
+      }
+    });
+
+    function showErr(msg) {
+      loginErr.textContent = msg;
+      loginErr.style.display = "block";
+    }
+  </script>
+</body>
+</html>
