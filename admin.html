@@ -504,14 +504,18 @@
         tbody.innerHTML = assists.map((a, i) => {
           const link = base + "?c=" + a.code;
           const count = countMap[a.name] || 0;
-          return `<tr>
+          return `<tr data-code="${a.code}">
             <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;">${i + 1}</td>
             <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;font-weight:600;">${a.name}</td>
             <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;color:#0d7377;font-weight:700;">${count}</td>
             <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">
-              <div style="display:flex;gap:6px;align-items:center;justify-content:center;">
-                <span style="font-family:monospace;font-size:12px;color:#666;background:#f8f9fa;padding:4px 8px;border-radius:4px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;">${link}</span>
-                <button onclick="copyAssistantLink('${a.code}')" style="padding:4px 10px;background:#17a2b8;color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer;">复制</button>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;">
+                <div style="display:flex;gap:6px;align-items:center;width:100%;">
+                  <span id="short-${a.code}" style="font-family:monospace;font-size:13px;color:#c2185b;background:#fdeef3;padding:5px 10px;border-radius:6px;font-weight:700;white-space:nowrap;">生成中...</span>
+                  <button onclick="copyShort('${a.code}')" style="padding:4px 10px;background:#ff6b8a;color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer;">复制短链</button>
+                </div>
+                <button onclick="toggleLong('${a.code}')" style="padding:2px 0;background:none;border:none;color:#888;font-size:11px;cursor:pointer;">查看长链接 ▾</button>
+                <div id="long-${a.code}" style="display:none;font-family:monospace;font-size:11px;color:#666;background:#f8f9fa;padding:6px 8px;border-radius:4px;max-width:320px;word-break:break-all;line-height:1.5;"></div>
               </div>
             </td>
             <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;">
@@ -519,6 +523,17 @@
             </td>
           </tr>`;
         }).join("");
+
+        // 异步为每个助教生成短链
+        assists.forEach(a => {
+          const link = base + "?c=" + a.code;
+          shorten(link).then(s => {
+            const el = document.getElementById("short-" + a.code);
+            if (el) el.textContent = s || link;
+            const lel = document.getElementById("long-" + a.code);
+            if (lel) lel.textContent = link;
+          });
+        });
       } catch (e) {
         tbody.innerHTML = '<tr><td colspan="5" style="padding:40px;color:#999;">加载失败，请重试</td></tr>';
       }
@@ -554,13 +569,33 @@
       } catch (e) { alert("删除失败，请重试"); }
     };
 
-    // 复制助教链接
-    window.copyAssistantLink = async function(code) {
-      const base = location.origin + location.pathname.replace(/admin\.html$/, "index.html");
-      const link = base + "?c=" + code;
-      try { await navigator.clipboard.writeText(link); alert("链接已复制"); }
+    // 复制助教短链
+    window.copyShort = async function(code) {
+      const el = document.getElementById("short-" + code);
+      const link = el ? el.textContent : "";
+      try { await navigator.clipboard.writeText(link); alert("短链接已复制"); }
       catch(e) { prompt("复制链接：", link); }
     };
+
+    // 展开/收起长链接
+    window.toggleLong = function(code) {
+      const box = document.getElementById("long-" + code);
+      const btn = event.target;
+      if (!box) return;
+      const isOpen = box.style.display === "block";
+      box.style.display = isOpen ? "none" : "block";
+      btn.textContent = isOpen ? "查看长链接 ▾" : "收起长链接 ▴";
+    };
+
+    // 调用 tinyurl 生成短链（对同一长链接固定返回同一短码）
+    async function shorten(longUrl) {
+      try {
+        const res = await fetch("https://tinyurl.com/api-create.php?url=" + encodeURIComponent(longUrl));
+        if (!res.ok) return null;
+        const t = (await res.text()).trim();
+        return /^https?:\/\//.test(t) ? t : null;
+      } catch(e) { return null; }
+    }
   </script>
 </body>
 </html>

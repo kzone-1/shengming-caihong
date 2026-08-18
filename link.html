@@ -37,10 +37,19 @@
     .result { display: none; margin-top: 22px; border-top: 1px dashed #e5e5e5; padding-top: 22px; }
     .result .hi { font-size: 15px; color: #333; margin-bottom: 14px; }
     .result .hi b { color: #ff6b8a; }
-    .linkbox {
-      background: #f8f9fa; border: 1.5px dashed #ff8fab; border-radius: 10px;
-      padding: 14px; margin-bottom: 14px; word-break: break-all;
-      font-family: monospace; font-size: 13px; color: #444; line-height: 1.6; text-align: left;
+    .shortlabel { font-size: 12px; color: #888; margin-bottom: 6px; }
+    .shortbox {
+      background: linear-gradient(90deg, #fff5f7, #fdeef3); border: 2px solid #ff8fab; border-radius: 10px;
+      padding: 14px; margin-bottom: 10px; word-break: break-all;
+      font-family: monospace; font-size: 17px; color: #c2185b; line-height: 1.5; text-align: center;
+      font-weight: 700;
+    }
+    .longtoggle { font-size: 12px; color: #999; margin-bottom: 14px; cursor: pointer; user-select: none; }
+    .longbox {
+      background: #f8f9fa; border: 1px dashed #ccc; border-radius: 8px;
+      padding: 10px; margin-bottom: 14px; word-break: break-all;
+      font-family: monospace; font-size: 11px; color: #666; line-height: 1.5; text-align: left;
+      display: none;
     }
     .tip { font-size: 12px; color: #999; margin-top: 14px; line-height: 1.6; }
     .back { margin-top: 14px; font-size: 13px; color: #999; }
@@ -66,8 +75,11 @@
     <!-- 结果：显示专属链接 -->
     <div class="result" id="resultWrap">
       <div class="hi">你好，<b id="whoName"></b>！这是你的专属链接：</div>
-      <div class="linkbox" id="linkText"></div>
-      <button class="btn" id="copyBtn">复制链接</button>
+      <div class="shortlabel">短链接（推荐，可直接复制转发）</div>
+      <div class="shortbox" id="shortLink">生成中...</div>
+      <button class="btn" id="copyBtn">复制短链接</button>
+      <div class="longtoggle" id="longToggle">查看/复制完整长链接 ▼</div>
+      <div class="longbox" id="linkText"></div>
       <div class="tip">把这条链接转发给家长，家长打开做测试后，<br>记录会自动归到你的名下。</div>
       <div class="back"><a href="index.html">返回首页</a></div>
     </div>
@@ -104,6 +116,11 @@
         document.getElementById("whoName").textContent = data.name;
         document.getElementById("linkText").textContent = link;
 
+        // 生成短链（tinyurl，对同一长链接固定返回同一短码）
+        const shortEl = document.getElementById("shortLink");
+        shortEl.textContent = "生成中...";
+        shorten(link).then(s => { if (s) shortEl.textContent = s; else shortEl.textContent = link; });
+
         loginWrap.style.display = "none";
         resultWrap.style.display = "block";
       } catch (e) {
@@ -113,18 +130,37 @@
       }
     });
 
-    // 复制链接
+    // 复制短链
     document.getElementById("copyBtn").addEventListener("click", async () => {
-      const link = document.getElementById("linkText").textContent;
+      const link = document.getElementById("shortLink").textContent;
       try {
         await navigator.clipboard.writeText(link);
         const b = document.getElementById("copyBtn");
         b.textContent = "✅ 已复制";
-        setTimeout(() => { b.textContent = "复制链接"; }, 1500);
+        setTimeout(() => { b.textContent = "复制短链接"; }, 1500);
       } catch(e) {
         prompt("复制链接：", link);
       }
     });
+
+    // 展开/收起完整长链接
+    const longToggle = document.getElementById("longToggle");
+    const longBox = document.getElementById("linkText");
+    longToggle.addEventListener("click", () => {
+      const isOpen = longBox.style.display === "block";
+      longBox.style.display = isOpen ? "none" : "block";
+      longToggle.textContent = isOpen ? "查看/复制完整长链接 ▼" : "收起完整长链接 ▲";
+    });
+
+    // 调用 tinyurl 生成短链
+    async function shorten(longUrl) {
+      try {
+        const res = await fetch("https://tinyurl.com/api-create.php?url=" + encodeURIComponent(longUrl));
+        if (!res.ok) return null;
+        const t = (await res.text()).trim();
+        return /^https?:\/\//.test(t) ? t : null;
+      } catch(e) { return null; }
+    }
 
     function showErr(msg) {
       loginErr.textContent = msg;
