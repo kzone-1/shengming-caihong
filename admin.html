@@ -255,18 +255,16 @@
           <h3 style="margin:0 0 14px;color:#0d7377;border-left:4px solid #0d7377;padding-left:10px;">新增助教</h3>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
             <input type="text" id="newAssistName" placeholder="助教姓名" style="padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;width:180px;" />
-            <input type="tel" id="newAssistPhone" placeholder="手机号" maxlength="11" inputmode="numeric" style="padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;width:180px;" />
             <button id="addAssistBtn" style="padding:10px 18px;background:#28a745;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;">添加助教</button>
           </div>
-          <div style="font-size:12px;color:#999;margin-top:8px;">添加后系统会自动生成一条专属邀请链接，助教用「姓名+手机号」登录工作台即可查看和转发。</div>
+          <div style="font-size:12px;color:#999;margin-top:8px;">添加后系统会自动生成一条专属邀请链接，助教输入姓名即可查看和转发。</div>
         </div>
         <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-          <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:800px;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:700px;">
             <thead>
               <tr>
                 <th style="padding:10px 8px;text-align:center;background:#f8f9fa;border-bottom:1px solid #f0f0f0;">序号</th>
                 <th style="padding:10px 8px;text-align:center;background:#f8f9fa;border-bottom:1px solid #f0f0f0;">姓名</th>
-                <th style="padding:10px 8px;text-align:center;background:#f8f9fa;border-bottom:1px solid #f0f0f0;">手机号</th>
                 <th style="padding:10px 8px;text-align:center;background:#f8f9fa;border-bottom:1px solid #f0f0f0;">名下客户</th>
                 <th style="padding:10px 8px;text-align:center;background:#f8f9fa;border-bottom:1px solid #f0f0f0;">专属链接</th>
                 <th style="padding:10px 8px;text-align:center;background:#f8f9fa;border-bottom:1px solid #f0f0f0;">操作</th>
@@ -488,7 +486,7 @@
     // 加载助教列表 + 统计各自名下客户数
     async function loadAssistants() {
       const tbody = document.getElementById("assistantsBody");
-      tbody.innerHTML = '<tr><td colspan="6" style="padding:40px;color:#999;">加载中...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:40px;color:#999;">加载中...</td></tr>';
       try {
         const { data: assists, error: ae } = await supabaseClient.from('assistants').select('*').order('id');
         if (ae) throw ae;
@@ -500,7 +498,7 @@
 
         const base = location.origin + location.pathname.replace(/admin\.html$/, "index.html");
         if (!assists || assists.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="padding:40px;color:#999;">还没有助教，请在上方添加</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="5" style="padding:40px;color:#999;">还没有助教，请在上方添加</td></tr>';
           return;
         }
         tbody.innerHTML = assists.map((a, i) => {
@@ -509,7 +507,6 @@
           return `<tr>
             <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;">${i + 1}</td>
             <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;font-weight:600;">${a.name}</td>
-            <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;font-family:monospace;">${a.phone || "-"}</td>
             <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;color:#0d7377;font-weight:700;">${count}</td>
             <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">
               <div style="display:flex;gap:6px;align-items:center;justify-content:center;">
@@ -523,27 +520,24 @@
           </tr>`;
         }).join("");
       } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="6" style="padding:40px;color:#999;">加载失败，请重试</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="padding:40px;color:#999;">加载失败，请重试</td></tr>';
       }
     }
 
     // 新增助教
     document.getElementById("addAssistBtn").addEventListener("click", async () => {
       const name = document.getElementById("newAssistName").value.trim();
-      const phone = document.getElementById("newAssistPhone").value.trim();
       if (!name) { alert("请输入助教姓名"); return; }
-      if (!/^\d{11}$/.test(phone)) { alert("请输入11位手机号"); return; }
       // 生成唯一 code（若冲突则重试）
       let code = genCode();
       for (let attempt = 0; attempt < 5; attempt++) {
-        const { data, error } = await supabaseClient.from('assistants').insert({ name, phone, code }).select().maybeSingle();
+        const { data, error } = await supabaseClient.from('assistants').insert({ name, code }).select().maybeSingle();
         if (error) {
           // code 冲突时重新生成
           if (error.message && error.message.includes('duplicate')) { code = genCode(); continue; }
           alert("添加失败：" + error.message); return;
         }
         document.getElementById("newAssistName").value = "";
-        document.getElementById("newAssistPhone").value = "";
         loadAssistants();
         return;
       }
