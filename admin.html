@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管理后台 - 生命彩虹图测试记录</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: #f0f2f5;
+      color: #333;
+    }
+    .login-wrap {
+      max-width: 400px;
+      margin: 80px auto;
+      background: #fff;
+      border-radius: 14px;
+      padding: 36px 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .login-wrap h1 {
+      margin: 0 0 24px;
+      font-size: 22px;
+      color: #0d7377;
+      text-align: center;
+    }
+    .login-wrap input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      margin-bottom: 16px;
+    }
+    .login-wrap button {
+      width: 100%;
+      padding: 12px;
+      background: #0d7377;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .login-wrap button:hover { background: #094f52; }
+    .login-error {
+      color: #e63946;
+      font-size: 14px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .dashboard { display: none; }
+    .dash-header {
+      background: #fff;
+      padding: 16px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .dash-header h1 {
+      margin: 0;
+      font-size: 20px;
+      color: #0d7377;
+    }
+    .dash-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .dash-actions input {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      width: 200px;
+    }
+    .dash-actions button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-export { background: #28a745; color: #fff; }
+    .btn-export:hover { background: #218838; }
+    .btn-refresh { background: #17a2b8; color: #fff; }
+    .btn-refresh:hover { background: #138496; }
+    .btn-logout { background: #e9ecef; color: #333; }
+    .btn-logout:hover { background: #dde2e6; }
+
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      padding: 16px 24px;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px 20px;
+      flex: 1;
+      min-width: 140px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .stat-card .label {
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 6px;
+    }
+    .stat-card .value {
+      font-size: 26px;
+      font-weight: 700;
+      color: #0d7377;
+    }
+
+    .table-container {
+      margin: 0 24px 24px;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 1000px;
+    }
+    th, td {
+      padding: 10px 8px;
+      text-align: center;
+      border-bottom: 1px solid #f0f0f0;
+      white-space: nowrap;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 700;
+      color: #555;
+      position: sticky;
+      top: 0;
+    }
+    tr:hover { background: #f8f9fa; }
+    .talent-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .talent-badge.shuai { background: #e74c3c; }
+    .talent-badge.jiang { background: #3498db; }
+    .talent-badge.hui { background: #2ecc71; }
+    .score-high { color: #27ae60; font-weight: 700; }
+    .score-low { color: #e74c3c; font-weight: 700; }
+    .btn-delete {
+      padding: 4px 10px;
+      background: #fff;
+      border: 1px solid #e63946;
+      color: #e63946;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn-delete:hover { background: #e63946; color: #fff; }
+    .empty-msg {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+      font-size: 16px;
+    }
+    .avg-cell { background: #fff9e6; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <!-- Login -->
+  <div class="login-wrap" id="loginWrap">
+    <h1>管理后台登录</h1>
+    <div class="login-error" id="loginError">密码错误，请重试</div>
+    <input type="password" id="passwordInput" placeholder="请输入管理密码" />
+    <button id="loginBtn">登录</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard" id="dashboard">
+    <div class="dash-header">
+      <h1>生命彩虹图测试记录</h1>
+      <div class="dash-actions">
+        <select id="sourceFilter" style="padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;background:#fff;">
+          <option value="">全部来源</option>
+        </select>
+        <input type="text" id="searchInput" placeholder="搜索孩子姓名或手机号..." />
+        <button class="btn-refresh" id="refreshBtn">刷新</button>
+        <button class="btn-export" id="exportBtn">导出 CSV</button>
+        <button class="btn-logout" id="logoutBtn">退出</button>
+      </div>
+    </div>
+    <div class="stats-bar" id="statsBar"></div>
+    <div class="table-container">
+      <table id="recordsTable">
+        <thead>
+          <tr>
+            <th>序号</th>
+            <th>孩子姓名</th>
+            <th>手机号</th>
+            <th>来源</th>
+            <th>贵人力</th>
+            <th>幸福力</th>
+            <th>沟通力</th>
+            <th>效能力</th>
+            <th>自控力</th>
+            <th>主角力</th>
+            <th>专注力</th>
+            <th>创富力</th>
+            <th>抗挫力</th>
+            <th>亲和力</th>
+            <th>学习力</th>
+            <th>领导力</th>
+            <th>平均分</th>
+            <th>天赋类型</th>
+            <th>提交时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="recordsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // === Supabase 配置（复制你的 Supabase 项目 URL 和 anon key 替换下面两个值）===
+    const SUPABASE_URL = 'https://xviogqxhmptrrogsqmgk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aW9ncXhobXB0cnJvZ3NxbWdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0Mzk4MzgsImV4cCI6MjEwMjAxNTgzOH0.wi9qS0rBJuOtAOD14vxpfTh2rh0dzzJQRNKEcwrx5QE';
+    let supabaseClient = null;
+    try { supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) {}
+
+    const ADMIN_PASSWORD = 'qiaomen2026';
+    let allRecords = [];
+
+    const ABILITY_NAMES = [
+      "贵人力", "幸福力", "沟通力", "效能力", "自控力", "主角力",
+      "专注力", "创富力", "抗挫力", "亲和力", "学习力", "领导力"
+    ];
+
+    // Login
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const pwd = document.getElementById("passwordInput").value;
+      if (!supabaseClient) { document.getElementById("loginError").textContent = "数据库未配置，无法登录"; document.getElementById("loginError").style.display = "block"; return; }
+      if (pwd === ADMIN_PASSWORD) {
+        document.getElementById("loginWrap").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+        loadRecords();
+      } else {
+        document.getElementById("loginError").style.display = "block";
+      }
+    });
+
+    document.getElementById("passwordInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("loginBtn").click();
+    });
+
+    // Load records
+    async function loadRecords() {
+      try {
+        const { data, error } = await supabaseClient.from('submissions').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        allRecords = (data || []).map(r => ({
+          id: r.id, childName: r.child_name, phone: r.phone || '', scores: r.scores,
+          avgScore: r.avg_score, talentType: r.talent_type || '', source: r.source || '', submittedAt: r.created_at
+        }));
+        renderTable(allRecords);
+        renderStats(allRecords);
+        refreshSourceFilter();
+      } catch (e) {
+        document.getElementById("recordsBody").innerHTML = '<tr><td colspan="20" class="empty-msg">加载失败，请检查数据库配置并重试</td></tr>';
+      }
+    }
+
+    // Render stats
+    function renderStats(records) {
+      const total = records.length;
+      const today = new Date().toDateString();
+      const todayCount = records.filter(r => new Date(r.submittedAt).toDateString() === today).length;
+      const avgAll = total > 0 ? (records.reduce((sum, r) => sum + r.avgScore, 0) / total).toFixed(1) : "0.0";
+      const shuaiCount = records.filter(r => r.talentType === "帅才").length;
+      const jiangCount = records.filter(r => r.talentType === "将才").length;
+      const huiCount = records.filter(r => r.talentType === "慧才").length;
+
+      document.getElementById("statsBar").innerHTML = `
+        <div class="stat-card"><div class="label">总提交数</div><div class="value">${total}</div></div>
+        <div class="stat-card"><div class="label">今日提交</div><div class="value">${todayCount}</div></div>
+        <div class="stat-card"><div class="label">平均分</div><div class="value">${avgAll}</div></div>
+        <div class="stat-card"><div class="label">帅才</div><div class="value" style="color:#e74c3c">${shuaiCount}</div></div>
+        <div class="stat-card"><div class="label">将才</div><div class="value" style="color:#3498db">${jiangCount}</div></div>
+        <div class="stat-card"><div class="label">慧才</div><div class="value" style="color:#2ecc71">${huiCount}</div></div>
+      `;
+    }
+
+    // Render table
+    function renderTable(records) {
+      const tbody = document.getElementById("recordsBody");
+      if (records.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="20" class="empty-msg">暂无提交记录</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = records.map((r, i) => {
+        const scoreCells = ABILITY_NAMES.map((_, idx) => {
+          const s = r.scores[idx] ?? "-";
+          const cls = s >= 8 ? "score-high" : (s <= 5 ? "score-low" : "");
+          return `<td class="${cls}">${s}</td>`;
+        }).join("");
+
+        const time = new Date(r.submittedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
+        const talentClass = r.talentType === "帅才" ? "shuai" : (r.talentType === "将才" ? "jiang" : "hui");
+
+        return `
+          <tr>
+            <td>${i + 1}</td>
+            <td style="font-weight:600">${r.childName}</td>
+            <td style="font-family:monospace">${r.phone || "-"}</td>
+            <td style="font-size:12px;color:#0d7377">${r.source || "-"}</td>
+            ${scoreCells}
+            <td class="avg-cell">${r.avgScore.toFixed(1)}</td>
+            <td><span class="talent-badge ${talentClass}">${r.talentType}</span></td>
+            <td style="font-size:12px;color:#999">${time}</td>
+            <td><button class="btn-delete" onclick="deleteRecord(${r.id})">删除</button></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    // Search + filter
+    let currentSourceFilter = "";
+    let filteredRecords = [];
+    function applyFilter() {
+      const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+      let list = allRecords;
+      if (currentSourceFilter) {
+        list = list.filter(r => r.source === currentSourceFilter);
+      }
+      if (keyword) {
+        list = list.filter(r =>
+          r.childName.toLowerCase().includes(keyword) ||
+          r.phone.includes(keyword) ||
+          r.source.toLowerCase().includes(keyword)
+        );
+      }
+      filteredRecords = list;
+      renderTable(list);
+      renderStats(list);
+    }
+
+    document.getElementById("searchInput").addEventListener("input", applyFilter);
+
+    // Build source filter dropdown
+    document.getElementById("sourceFilter").addEventListener("change", (e) => {
+      currentSourceFilter = e.target.value;
+      applyFilter();
+    });
+
+    function refreshSourceFilter() {
+      const sel = document.getElementById("sourceFilter");
+      const current = sel.value;
+      const sources = [...new Set(allRecords.map(r => r.source).filter(Boolean))].sort();
+      sel.innerHTML = '<option value="">全部来源</option>' +
+        sources.map(s => `<option value="${s}">${s}</option>`).join("");
+      if (sources.includes(current)) sel.value = current;
+      else currentSourceFilter = "";
+    }
+
+    // Refresh
+    document.getElementById("refreshBtn").addEventListener("click", loadRecords);
+
+    // Export CSV (client-side) —— 导出当前筛选结果
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const exportList = filteredRecords.length ? filteredRecords : allRecords;
+      const header = ["序号","孩子姓名","手机号","来源","贵人力","幸福力","沟通力","效能力","自控力","主角力","专注力","创富力","抗挫力","亲和力","学习力","领导力","平均分","天赋类型","提交时间"];
+      const rows = exportList.map((r, i) => {
+        const sc = ABILITY_NAMES.map((_, idx) => r.scores[idx] ?? "");
+        const time = new Date(r.submittedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
+        return [i+1, r.childName, r.phone || "", r.source || "", ...sc, r.avgScore.toFixed(1), r.talentType, time];
+      });
+      const csv = "\uFEFF" + [header, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      const suffix = currentSourceFilter ? `_${currentSourceFilter}` : "";
+      a.href = URL.createObjectURL(blob); a.download = `submissions${suffix}_${Date.now()}.csv`; a.click();
+    });
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      document.getElementById("dashboard").style.display = "none";
+      document.getElementById("loginWrap").style.display = "block";
+      document.getElementById("passwordInput").value = "";
+    });
+
+    // Delete record
+    window.deleteRecord = async function(id) {
+      if (!confirm("确定要删除这条记录吗？")) return;
+      try {
+        const { error } = await supabaseClient.from('submissions').delete().eq('id', id);
+        if (error) throw error;
+        loadRecords();
+      } catch (e) {
+        alert("删除失败，请重试");
+      }
+    };
+  </script>
+</body>
+</html>

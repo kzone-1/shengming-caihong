@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>十二灵种生命彩虹图测试</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --primary: #0d7377;
+      --primary-dark: #094f52;
+      --accent: #ff6b6b;
+      --yellow: #fff176;
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #333333;
+      --muted: #666666;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      color: var(--primary-dark);
+    }
+    header p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+    section {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    h2 {
+      margin: 0 0 18px;
+      font-size: 20px;
+      color: var(--primary-dark);
+      border-left: 4px solid var(--primary);
+      padding-left: 12px;
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="tel"] {
+      width: 100%;
+      max-width: 320px;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .ability-card {
+      border: 1px solid #ececec;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+      background: #fafafa;
+      transition: box-shadow 0.2s;
+    }
+    .form-group input[type="text"].highlight,
+    .form-group input[type="tel"].highlight {
+      border-color: #e63946;
+      background: #fff5f5;
+      box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.25);
+      animation: pulse-highlight 0.6s ease-in-out 3;
+    }
+    .ability-card.highlight {
+      border-color: #e63946;
+      background: #fff5f5;
+      box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.25);
+      animation: pulse-highlight 0.6s ease-in-out 3;
+    }
+    @keyframes pulse-highlight {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.25); }
+      50% { box-shadow: 0 0 0 8px rgba(230, 57, 70, 0.08); }
+    }
+    .ability-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .ability-name {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--primary-dark);
+    }
+    .ability-desc {
+      margin: 8px 0 12px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .score-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .score-label {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .score-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .score-btn {
+      width: 48px;
+      height: 48px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      background: #fff;
+      color: #555;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .score-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #eef7f7;
+    }
+    .score-btn.s0, .score-btn.s1, .score-btn.s2 { border-color: #f5c6cb; color: #c0392b; }
+    .score-btn.s3, .score-btn.s4 { border-color: #ffeaa7; color: #e67e22; }
+    .score-btn.s5, .score-btn.s6 { border-color: #f9e79f; color: #b7950b; }
+    .score-btn.s7, .score-btn.s8 { border-color: #a9dfbf; color: #1e8449; }
+    .score-btn.s9, .score-btn.s10 { border-color: #7dcea0; color: #1e8449; }
+
+    .score-btn.s0.selected, .score-btn.s1.selected, .score-btn.s2.selected {
+      background: #e74c3c; border-color: #e74c3c; color: #fff;
+    }
+    .score-btn.s3.selected, .score-btn.s4.selected {
+      background: #e67e22; border-color: #e67e22; color: #fff;
+    }
+    .score-btn.s5.selected, .score-btn.s6.selected {
+      background: #f1c40f; border-color: #f1c40f; color: #333;
+    }
+    .score-btn.s7.selected, .score-btn.s8.selected {
+      background: #2ecc71; border-color: #2ecc71; color: #fff;
+    }
+    .score-btn.s9.selected, .score-btn.s10.selected {
+      background: #27ae60; border-color: #27ae60; color: #fff;
+    }
+
+    .score-pick {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 6px;
+    }
+    .score-pick-label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .score-pick-value {
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--primary);
+      min-width: 24px;
+      text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      .score-btn {
+        width: 42px;
+        height: 42px;
+        font-size: 16px;
+        border-radius: 8px;
+      }
+      .score-buttons { gap: 6px; }
+      .score-pick-value { font-size: 18px; }
+    }
+    .btn-primary, .btn-secondary {
+      display: inline-block;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary {
+      background: #e9ecef;
+      color: var(--text);
+      margin-top: 12px;
+    }
+    .btn-secondary:hover { background: #dde2e6; }
+    .hidden { display: none !important; }
+
+    .summary-box {
+      background: #eef7f7;
+      border-left: 4px solid var(--primary);
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin-bottom: 18px;
+    }
+    .summary-box p { margin: 6px 0; }
+    .summary-box strong { color: var(--primary-dark); }
+
+    .table-wrap { overflow-x: auto; margin-bottom: 22px; }
+    #scoreTable {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 640px;
+    }
+    #scoreTable th, #scoreTable td {
+      border: 1px solid #333;
+      padding: 8px 6px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #scoreTable th {
+      background: #f0f0f0;
+      font-weight: 700;
+    }
+    #scoreTable .avg-cell {
+      background: var(--yellow);
+      font-weight: 700;
+    }
+    #scoreTable .score-cell { font-weight: 700; }
+
+    .chart-wrap {
+      position: relative;
+      height: 540px;
+      margin-bottom: 22px;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .chart-hint {
+      position: absolute;
+      bottom: 4px;
+      right: 10px;
+      font-size: 12px;
+      color: #999;
+      pointer-events: none;
+    }
+    #rainbowChart {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .analysis h3 {
+      margin: 22px 0 12px;
+      font-size: 18px;
+      color: var(--primary-dark);
+    }
+    .ability-result {
+      border-left: 4px solid var(--primary);
+      background: #fafafa;
+      padding: 14px 16px;
+      border-radius: 8px;
+      margin-bottom: 14px;
+    }
+    .ability-result.strength { border-left-color: #28a745; background: #f0fff4; }
+    .ability-result.weakness { border-left-color: var(--accent); background: #fff5f5; }
+    .ability-result h4 {
+      margin: 0 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 13px;
+      color: #fff;
+      font-weight: 700;
+    }
+    .badge.strength { background: #28a745; }
+    .badge.weakness { background: var(--accent); }
+    .ability-result p { margin: 6px 0; font-size: 14px; }
+    .ability-result ul { margin: 6px 0; padding-left: 20px; font-size: 14px; }
+    .ability-result li { margin-bottom: 4px; }
+
+    .talent-box {
+      background: linear-gradient(135deg, #fff9e6, #fff3cd);
+      border: 2px solid #f0c040;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 22px;
+      text-align: center;
+    }
+    .talent-box h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      color: #b8860b;
+    }
+    .talent-type {
+      display: inline-block;
+      font-size: 32px;
+      font-weight: 900;
+      color: #b8860b;
+      padding: 6px 24px;
+      border: 3px solid #f0c040;
+      border-radius: 12px;
+      background: #fff;
+      margin: 8px 0;
+    }
+    .talent-desc {
+      font-size: 15px;
+      color: #666;
+      margin: 10px 0 0;
+      line-height: 1.8;
+    }
+    .talent-detail {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .talent-item {
+      font-size: 14px;
+      color: #555;
+    }
+    .talent-item strong {
+      color: #b8860b;
+    }
+
+    @media (max-width: 640px) {
+      .container { padding: 14px; }
+      header h1 { font-size: 22px; }
+      section { padding: 16px; }
+      .chart-wrap { height: 420px; }
+    }
+    /* 图片放大 lightbox */
+    .lightbox-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      cursor: zoom-out;
+    }
+    .lightbox-overlay.active { display: flex; }
+    .lightbox-overlay img {
+      max-width: 95vw;
+      max-height: 95vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 8px 36px rgba(0,0,0,0.5);
+    }
+    .lightbox-close {
+      position: fixed;
+      top: 16px;
+      right: 24px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .lightbox-close:hover { background: rgba(255,255,255,0.3); }
+
+    @media print {
+      body { background: #fff; }
+      section { box-shadow: none; border: 1px solid #ddd; }
+      .btn-primary, .btn-secondary, .score-control input[type="range"], #inputSection { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>十二灵种生命彩虹图测试</h1>
+      <p>根据 12 项能力测评，绘制孩子的生命彩虹图，并给出与学习相关的培养建议</p>
+      <p id="sourceHint" style="display:none;margin-top:6px;font-size:13px;color:#0d7377;"></p>
+    </header>
+
+    <section id="inputSection">
+      <h2>【天赋测试】生命彩虹图</h2>
+      <div class="form-group">
+        <label for="childName">孩子姓名</label>
+        <input type="text" id="childName" placeholder="请输入孩子姓名" />
+      </div>
+      <div class="form-group">
+        <label for="parentPhone">报名课程手机号</label>
+        <input type="tel" id="parentPhone" placeholder="请输入11位手机号" maxlength="11" inputmode="numeric" />
+      </div>
+      <div id="abilityInputs"></div>
+      <button id="generateBtn" class="btn-primary">生成生命彩虹图</button>
+    </section>
+
+    <section id="resultSection" class="hidden">
+      <h2>【天赋分析报告】</h2>
+      <div class="summary-box" id="summaryBox"></div>
+
+      <div class="table-wrap">
+        <table id="scoreTable"></table>
+      </div>
+
+      <div class="chart-wrap">
+        <canvas id="rainbowChart"></canvas>
+        <span class="chart-hint">点击图片可放大查看</span>
+      </div>
+
+      <div class="analysis" id="analysis"></div>
+
+      <button id="saveBtn" class="btn-secondary">保存结果为图片</button>
+      <div id="submitStatus" style="margin-top:12px;font-size:14px;"></div>
+    </section>
+  </div>
+
+  <div class="lightbox-overlay" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose">&times;</button>
+    <img id="lightboxImg" alt="放大查看生命彩虹图" />
+  </div>
+  <script>
+    // === Supabase 配置（复制你的 Supabase 项目 URL 和 anon key 替换下面两个值）===
+    const SUPABASE_URL = 'https://xviogqxhmptrrogsqmgk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aW9ncXhobXB0cnJvZ3NxbWdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0Mzk4MzgsImV4cCI6MjEwMjAxNTgzOH0.wi9qS0rBJuOtAOD14vxpfTh2rh0dzzJQRNKEcwrx5QE';
+    let supabaseClient = null;
+    try { supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) {}
+
+    // 读取专属链接来源参数 ?s=xxx（推荐人/渠道标识），随提交记录一起入库
+    const sourceCode = (new URLSearchParams(location.search).get("s") || "").trim().slice(0, 50);
+    if (sourceCode) {
+      const hint = document.getElementById("sourceHint");
+      hint.textContent = "推荐人：" + sourceCode;
+      hint.style.display = "block";
+    }
+
+    const abilities = [
+      {
+        key: "贵人力",
+        desc: "孩子如果在学校里面能够获得老师的关注和喜欢，对孩子来讲是巨大的优势，长大后也会获得未来领导的器重。请根据孩子是否容易被他人器重、获得师长或同伴认可的程度打分。",
+        high: {
+          msg: "这是孩子的强项，说明孩子在学校容易获得老师和同学的喜爱，未来进入职场也更容易得到领导器重。",
+          tips: [
+            "鼓励孩子主动担任小组长、课代表，增加与老师的正向互动。",
+            "教孩子课后整理问题清单，主动向老师请教，把「被喜欢」转化为「被指导」。",
+            "在家庭中模拟汇报场景，让孩子学会得体地展示自己的学习成果。"
+          ]
+        },
+        low: {
+          msg: "孩子目前在人群中不够突出，容易被忽视，需要帮助他建立与老师和同伴的积极连接。",
+          tips: [
+            "每天练习一句礼貌问候或课堂举手发言，从「被看见」的小动作开始。",
+            "和孩子一起复盘课堂表现，找到能引起老师正向关注的行为。",
+            "鼓励孩子参与班级服务（发作业、整理讲台），在服务中积累信任感。"
+          ]
+        }
+      },
+      {
+        key: "幸福力",
+        desc: "孩子是否能够轻松融入集体，并且与各类同学相处融洽，保持较为良好的同学关系。请根据孩子在同伴中是否快乐、是否有稳定朋友打分。",
+        high: {
+          msg: "孩子人缘好、归属感强，良好的同伴关系能为学习提供情绪缓冲和合作资源。",
+          tips: [
+            "让孩子在小组学习中担任协调者，带动团队氛围。",
+            "通过同伴互评、小组作业，把社交优势转化为学习动力。",
+            "引导孩子关注需要帮助的同学，培养利他意识。"
+          ]
+        },
+        low: {
+          msg: "孩子在集体中可能感到压力，社交困扰容易影响学习状态和情绪稳定。",
+          tips: [
+            "多创造同伴一起学习的机会，如约同学一起写作业、做项目。",
+            "用角色扮演教孩子换位思考，练习与不同类型同学相处。",
+            "从共同兴趣（运动、游戏、阅读）入手，帮助孩子建立至少一个稳定友谊。"
+          ]
+        }
+      },
+      {
+        key: "沟通力",
+        desc: "如果孩子日常生活中能够与父母进行有效沟通，极大概率能避免叛逆的发生。请根据孩子表达需求、倾听他人、与家长交流的顺畅度打分。",
+        high: {
+          msg: "孩子能较好地表达需求与情绪，亲子沟通顺畅，问题更容易被及时发现和解决。",
+          tips: [
+            "用「讲事实 + 说感受 + 提请求」的方式，带孩子复盘学习困难。",
+            "鼓励孩子对不认同的学习安排提出替代方案，而不是简单服从或对抗。",
+            "定期召开家庭会议，让孩子参与学习计划和规则的制定。"
+          ]
+        },
+        low: {
+          msg: "孩子可能习惯把话憋在心里，或容易用对抗代替沟通，长期会影响学习配合度。",
+          tips: [
+            "每天固定 15 分钟亲子聊天时间，先倾听不打断，再给出建议。",
+            "教孩子用便签、日记或语音消息表达不便当面说的事。",
+            "把「命令式」语言改成「选择题」，例如「你想先写数学还是先背英语？」。"
+          ]
+        }
+      },
+      {
+        key: "效能力",
+        desc: "如果孩子从小意识到时间的重要性，做事高效利落，一生的成就将至少被放大 3-4 倍。请根据孩子做作业、做家务、安排事务的效率打分。",
+        high: {
+          msg: "孩子学习效率高，能用更少时间完成同等任务，有余力进行拓展和休息。",
+          tips: [
+            "教孩子列每日任务清单，练习「先难后易」的排序策略。",
+            "引入番茄钟，让孩子体验时间块带来的掌控感。",
+            "鼓励孩子定期优化学习流程，找到最适合自己的节奏。"
+          ]
+        },
+        low: {
+          msg: "孩子做事容易拖沓，作业耗时过长，会影响睡眠、情绪和后续学习投入。",
+          tips: [
+            "固定每天的学习时段，形成「到点就学」的条件反射。",
+            "把作业拆成 25 分钟的小块，完成一块休息 5 分钟。",
+            "减少学习区域的电子产品和玩具干扰，书桌只放当前科目资料。",
+            "睡前 5 分钟和孩子一起复盘当天任务完成情况。"
+          ]
+        }
+      },
+      {
+        key: "自控力",
+        desc: "如果孩子从小就养成自觉自律的习惯，家长在育子之路上将会变得非常省心。请根据孩子自觉完成作业、控制冲动、管理电子产品的能力打分。",
+        high: {
+          msg: "孩子具备较强的自我管理能力，能够主动完成学习任务，家长可以适当放手。",
+          tips: [
+            "让孩子自己制定学习契约，家长只做监督者和鼓励者。",
+            "逐步扩大自主权，比如让孩子决定周末学习顺序。",
+            "引导孩子把自律迁移到新领域（运动、阅读、兴趣）。"
+          ]
+        },
+        low: {
+          msg: "孩子目前对外部监督依赖较强，自律习惯尚未稳定，需要循序渐进的培养。",
+          tips: [
+            "用可视化打卡表记录每日学习任务，完成即打勾。",
+            "把大目标拆成小目标，每完成一个小目标给予即时反馈。",
+            "移除明显干扰源，如约定电子产品使用时段和时长。",
+            "先抓一项核心习惯（如按时完成作业），稳定后再叠加新习惯。"
+          ]
+        }
+      },
+      {
+        key: "主角力",
+        desc: "当孩子唤醒内在的上进心与责任感，会从小对学习、卫生、人际关系与身体健康负责。请根据孩子是否主动为自己的学习和生活负责打分。",
+        high: {
+          msg: "孩子有主角意识，愿意主动为自己的学习和生活负责，不需要家长反复催促。",
+          tips: [
+            "给孩子一个小项目（如策划一次家庭出游或班级活动），让他承担完整结果。",
+            "让孩子当「小老师」，把学到的知识讲给家人或同学听。",
+            "鼓励孩子记录成长日记，定期回顾目标和进步。"
+          ]
+        },
+        low: {
+          msg: "孩子目前较被动，习惯等待安排，需要帮助他建立「我是自己学习的第一责任人」的意识。",
+          tips: [
+            "让孩子自己设定一个可达成的学习目标，并自己决定完成方式。",
+            "允许孩子承担自然结果，比如忘带作业让他自己面对老师的反馈。",
+            "给孩子在班级或家庭中一个具体角色（领读员、植物管理员）。",
+            "用提问代替指令：「你觉得这件事怎么安排比较好？」。"
+          ]
+        }
+      },
+      {
+        key: "专注力",
+        desc: "如果孩子做事能够非常专心，那么无论在学习还是未来工作都会有很强的竞争力。请根据孩子专注时长、抗干扰能力打分。",
+        high: {
+          msg: "孩子专注度好，能够进行深度学习，这是学业持续优秀的核心保障。",
+          tips: [
+            "适当增加挑战性任务，帮助孩子进入心流状态。",
+            "鼓励孩子进行长文阅读、棋类、乐器等需要持续专注的活动。",
+            "保护专注时段，减少无意义的打断。"
+          ]
+        },
+        low: {
+          msg: "孩子容易分心，学习效率受影响，需要通过环境和训练逐步提升。",
+          tips: [
+            "一次只做一科作业，桌面只放当前科目资料。",
+            "使用 25 + 5 番茄钟，让孩子体验短时间的全神贯注。",
+            "减少多任务切换，避免边写作业边听故事或看视频。",
+            "通过背诵、拼图、舒尔特方格等练习提升专注耐力。"
+          ]
+        }
+      },
+      {
+        key: "创富力",
+        desc: "一旦孩子在很小的时候就挖掘出自己的天赋，他将会比同龄孩子更快找到适合并且热爱的行业。请根据孩子的兴趣爱好是否明确、是否在某方面有突出热情或表现打分。",
+        high: {
+          msg: "孩子有自己的兴趣或天赋方向，这是内驱力和未来职业定位的重要起点。",
+          tips: [
+            "把兴趣转化为学科项目，例如用数学做理财游戏、用语文写小说。",
+            "鼓励孩子参加相关比赛或社团，看见自己的可能性。",
+            "保护孩子的好奇心，允许他在安全范围内试错。"
+          ]
+        },
+        low: {
+          msg: "孩子尚未明显展现出热爱领域，需要更多尝试和体验来发现天赋。",
+          tips: [
+            "提供多元体验：科学实验、手工、音乐、运动、编程等。",
+            "观察孩子在哪类活动中能长时间投入且不喊累，那可能就是天赋信号。",
+            "把学科知识和孩子日常兴趣结合，比如用他喜欢的动漫人物学英语单词。",
+            "帮助孩子记录「高光时刻」，逐步看见自己的优势。"
+          ]
+        }
+      },
+      {
+        key: "抗挫力",
+        desc: "孩子在遇到坏的事情时，能够进行乐观积极的思考，将来会成为乐观、积极、善于发现机会的人。请根据孩子面对失败、批评、困难时的情绪和复原能力打分。",
+        high: {
+          msg: "孩子面对挫折时能保持积极心态，这种复原力是长期学习和事业成功的重要保障。",
+          tips: [
+            "适当增加有挑战性的竞赛或任务，让孩子积累成功经验。",
+            "引导孩子用「这次我学到了什么」代替「我又失败了」。",
+            "分享名人或家人克服挫折的故事，强化成长型思维。"
+          ]
+        },
+        low: {
+          msg: "孩子在遇到困难或失利时容易气馁，可能会回避挑战，影响学习突破。",
+          tips: [
+            "用成长型思维语言反馈：「你只是还没掌握，不是学不会」。",
+            "把大考、大目标拆成阶段性小目标，让孩子体验成功。",
+            "在孩子失败时先共情，再一起分析下一步怎么做。",
+            "通过运动、棋类等需要反复练习的活动培养耐受力。"
+          ]
+        }
+      },
+      {
+        key: "亲和力",
+        desc: "孩子跟任何人相处，都能让别人感受舒服、温暖、开心，被人喜爱，一生会遇见很多贵人。请根据孩子与人相处时是否让人舒服、是否容易被喜欢打分。",
+        high: {
+          msg: "孩子具有让人舒服的亲和力，容易获得他人帮助，在团队合作中如鱼得水。",
+          tips: [
+            "让孩子在合作学习中发挥「润滑剂」作用，协调小组分工。",
+            "教孩子具体化赞美，如「你刚才的解题思路很清晰」。",
+            "引导孩子关注他人情绪，培养同理心。"
+          ]
+        },
+        low: {
+          msg: "孩子在人际互动中可能不够柔和，容易无意中伤害关系或被孤立。",
+          tips: [
+            "练习微笑、眼神交流和倾听，不打断别人说话。",
+            "通过绘本、电影讨论不同角色的感受，提升共情能力。",
+            "在小组活动中约定「轮流发言」和「不打断」规则。",
+            "教孩子用「我句式」表达不满，例如「我不喜欢被抢话」。"
+          ]
+        }
+      },
+      {
+        key: "学习力",
+        desc: "孩子热爱学习，能够享受学习带来的成就感，不需要父母操心，学习成绩就很好。请根据孩子对学习的热情、主动性、成绩表现打分。",
+        high: {
+          msg: "孩子热爱学习，内驱力强，这是学业持续领先的发动机。",
+          tips: [
+            "拓展阅读面和跨学科项目，满足孩子的求知欲。",
+            "让孩子当小老师，把学会的内容讲出来，加深理解。",
+            "鼓励孩子参加学科竞赛或研究性学习，保持挑战性。"
+          ]
+        },
+        low: {
+          msg: "孩子目前对学习缺乏热情或信心，需要从成就感入手重新建立连接。",
+          tips: [
+            "找到孩子的「最近发展区」，任务难度略高于当前水平，跳一跳够得着。",
+            "把大目标拆成小目标，每完成一步及时给予正向反馈。",
+            "帮助孩子发现某一学科的趣味点或实用价值。",
+            "减少批评，多关注努力过程，让孩子体验「我会了」的成就感。"
+          ]
+        }
+      },
+      {
+        key: "领导力",
+        desc: "有领导思维的孩子从小就会展现领导者风范，既懂得帮助他人，又懂得让他人来帮助自己。请根据孩子是否具备组织、号召、带领伙伴完成任务的能力打分。",
+        high: {
+          msg: "孩子有号召力和组织意识，能带动伙伴一起完成任务，这是未来管理潜质。",
+          tips: [
+            "鼓励孩子组织学习小组，带领同学一起复习或完成项目。",
+            "让孩子策划班级或家庭活动，练习分工和授权。",
+            "引导孩子理解「领导力不是命令别人，而是成就团队」。"
+          ]
+        },
+        low: {
+          msg: "孩子目前更习惯跟随，需要在安全场景中练习承担责任和协调资源。",
+          tips: [
+            "给孩子分配一个他可以负责的小任务，并让他自己招募帮手。",
+            "定期召开家庭会议，让孩子主持议程、记录决议。",
+            "鼓励孩子在学校竞选一次小组长或活动负责人。",
+            "通过桌游、合作项目练习分工和协商。"
+          ]
+        }
+      }
+    ];
+
+    const abilityInputs = document.getElementById("abilityInputs");
+    abilities.forEach((ab, index) => {
+      const card = document.createElement("div");
+      card.className = "ability-card";
+      card.id = "card-" + index;
+      card.innerHTML = `
+        <div class="ability-header">
+          <span class="ability-name">${index + 1}. ${ab.key}</span>
+        </div>
+        <div class="ability-desc">${ab.desc}</div>
+        <div class="score-control">
+          <span class="score-label">评分：</span>
+          <div class="score-buttons" id="btns-${index}">
+            ${Array.from({length: 11}, (_, i) => `<button class="score-btn s${i}" data-score="${i}">${i}</button>`).join("")}
+          </div>
+          <div class="score-pick">
+            <span class="score-pick-label">已选：</span>
+            <span class="score-pick-value" id="val-${index}" style="color: #999;">未选择</span>
+            <span class="score-pick-label">分</span>
+          </div>
+        </div>
+        <input type="hidden" id="num-${index}" value="" />
+      `;
+      abilityInputs.appendChild(card);
+
+      const buttons = card.querySelectorAll(".score-btn");
+      const hidden = card.querySelector(`#num-${index}`);
+      const val = card.querySelector(`#val-${index}`);
+      buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const sc = parseInt(btn.dataset.score, 10);
+          hidden.value = sc;
+          val.textContent = sc;
+          val.style.color = "";
+          buttons.forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+        });
+      });
+    });
+
+    function drawChart(canvas, name, scores, avg) {
+      const wrap = canvas.parentElement;
+      const dpr = window.devicePixelRatio || 1;
+      const cssWidth = wrap.clientWidth;
+      const cssHeight = wrap.clientHeight;
+      canvas.width = cssWidth * dpr;
+      canvas.height = cssHeight * dpr;
+      canvas.style.width = cssWidth + "px";
+      canvas.style.height = cssHeight + "px";
+
+      const isNarrow = cssWidth < 500;
+      const axisFont = isNarrow ? "11px Microsoft YaHei, sans-serif" : "13px Microsoft YaHei, sans-serif";
+      const titleFont = isNarrow ? "bold 15px Microsoft YaHei, sans-serif" : "bold 17px Microsoft YaHei, sans-serif";
+      const axisTitleFont = isNarrow ? "bold 12px Microsoft YaHei, sans-serif" : "bold 14px Microsoft YaHei, sans-serif";
+      const pointRadius = isNarrow ? 4 : 6;
+      const mainLineWidth = isNarrow ? 2.5 : 3.5;
+
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+      // 白色背景（导出图片时四周有白边）
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, cssWidth, cssHeight);
+
+      const padding = isNarrow
+        ? { top: 52, right: 28, bottom: 110, left: 42 }
+        : { top: 60, right: 40, bottom: 94, left: 54 };
+      const chartW = cssWidth - padding.left - padding.right;
+      const chartH = cssHeight - padding.top - padding.bottom;
+      const chartLeft = padding.left;
+      const chartTop = padding.top;
+      const chartRight = chartLeft + chartW;
+      const chartBottom = chartTop + chartH;
+
+      const yMax = 10;
+      const yMin = 0;
+
+      function yToPx(v) {
+        return chartBottom - ((v - yMin) / (yMax - yMin)) * chartH;
+      }
+      function xToPx(i) {
+        return chartLeft + (i / (scores.length - 1)) * chartW;
+      }
+
+      // 黄色背景
+      ctx.fillStyle = "#fff176";
+      ctx.fillRect(chartLeft, chartTop, chartW, chartH);
+
+      // 网格线
+      ctx.strokeStyle = "rgba(0,0,0,0.12)";
+      ctx.lineWidth = 1;
+      for (let y = yMin; y <= yMax; y++) {
+        const yy = yToPx(y);
+        ctx.beginPath();
+        ctx.moveTo(chartLeft, yy);
+        ctx.lineTo(chartRight, yy);
+        ctx.stroke();
+      }
+
+      // 坐标轴
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(chartLeft, chartTop);
+      ctx.lineTo(chartLeft, chartBottom);
+      ctx.lineTo(chartRight, chartBottom);
+      ctx.stroke();
+
+      // Y 轴标签 + 竖轴标题
+      ctx.fillStyle = "#333";
+      ctx.font = axisFont;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let y = yMin; y <= yMax; y++) {
+        ctx.fillText(y, chartLeft - 8, yToPx(y));
+      }
+      // 竖轴标题
+      ctx.save();
+      ctx.translate(isNarrow ? 12 : 14, chartTop + chartH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = "center";
+      ctx.font = axisTitleFont;
+      ctx.fillText("得分", 0, 0);
+      ctx.restore();
+
+      // X 轴标签
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.save();
+      const labels = abilities.map(ab => ab.key);
+      labels.forEach((label, i) => {
+        const x = xToPx(i);
+        if (isNarrow) {
+          // 窄屏竖排显示，节省宽度
+          ctx.save();
+          ctx.translate(x, chartBottom + 8);
+          ctx.rotate(-Math.PI / 2);
+          ctx.textAlign = "right";
+          ctx.textBaseline = "middle";
+          ctx.fillText(label, 0, 0);
+          ctx.restore();
+        } else {
+          ctx.fillText(label, x, chartBottom + 10);
+        }
+      });
+      ctx.restore();
+      // 横轴标题
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.font = axisTitleFont;
+      ctx.fillText("能力维度", chartLeft + chartW / 2, chartBottom + (isNarrow ? 72 : 34));
+
+      // 标准线（固定在 7 分）
+      const baselineY = yToPx(7);
+      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = "#e63946";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(chartLeft, baselineY);
+      ctx.lineTo(chartRight, baselineY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 折线
+      ctx.strokeStyle = "#0d7377";
+      ctx.lineWidth = mainLineWidth;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      scores.forEach((s, i) => {
+        const x = xToPx(i);
+        const y = yToPx(s);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // 数据点
+      scores.forEach((s, i) => {
+        const x = xToPx(i);
+        const y = yToPx(s);
+        ctx.beginPath();
+        ctx.arc(x, y, pointRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#0d7377";
+        ctx.fill();
+        ctx.lineWidth = isNarrow ? 2 : 3;
+        ctx.strokeStyle = "#fff";
+        ctx.stroke();
+
+        ctx.fillStyle = "#0d7377";
+        ctx.font = isNarrow ? "bold 11px Microsoft YaHei, sans-serif" : "bold 14px Microsoft YaHei, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(s, x, y - (isNarrow ? 5 : 8));
+      });
+
+      // 标题
+      ctx.fillStyle = "#333";
+      ctx.font = titleFont;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText(`${name}的生命彩虹图`, cssWidth / 2, isNarrow ? 12 : 18);
+    }
+
+    document.getElementById("generateBtn").addEventListener("click", () => {
+      const name = document.getElementById("childName").value.trim();
+      if (!name) {
+        const nameInput = document.getElementById("childName");
+        nameInput.classList.add("highlight");
+        nameInput.scrollIntoView({ behavior: "smooth", block: "center" });
+        nameInput.focus();
+        setTimeout(() => nameInput.classList.remove("highlight"), 3500);
+        alert("请输入孩子姓名后再生成报告。");
+        return;
+      }
+
+      const phone = document.getElementById("parentPhone").value.trim();
+      if (!/^1\d{10}$/.test(phone)) {
+        const phoneInput = document.getElementById("parentPhone");
+        phoneInput.classList.add("highlight");
+        phoneInput.scrollIntoView({ behavior: "smooth", block: "center" });
+        phoneInput.focus();
+        setTimeout(() => phoneInput.classList.remove("highlight"), 3500);
+        alert("请输入正确的11位报名课程手机号。");
+        return;
+      }
+
+      // 检查是否所有能力都已评分
+      const unrated = [];
+      abilities.forEach((_, i) => {
+        const v = document.getElementById(`num-${i}`).value;
+        if (v === "" || v === null) unrated.push(i + 1);
+      });
+      if (unrated.length > 0) {
+        // 先清除所有旧高亮
+        document.querySelectorAll(".ability-card.highlight").forEach(c => c.classList.remove("highlight"));
+        // 高亮所有未填项
+        unrated.forEach(i => {
+          const card = document.getElementById("card-" + (i - 1));
+          if (card) card.classList.add("highlight");
+          // 3 秒后自动取消高亮
+          setTimeout(() => { if (card) card.classList.remove("highlight"); }, 3500);
+        });
+        // 跳转到第一个未填项
+        const firstCard = document.getElementById("card-" + (unrated[0] - 1));
+        if (firstCard) {
+          firstCard.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        const names = unrated.map(i => abilities[i - 1].key).join("、");
+        alert(`还有 ${unrated.length} 项能力未打分：${names}。\n已为您跳转到未填项（红色高亮标记），请完成后再生成报告。`);
+        return;
+      }
+
+      const scores = abilities.map((_, i) => {
+        const v = parseInt(document.getElementById(`num-${i}`).value, 10);
+        return isNaN(v) ? 0 : Math.max(0, Math.min(10, v));
+      });
+      const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const avgFixed = avg.toFixed(1);
+
+      renderTable(scores, avgFixed);
+      renderAnalysis(name, scores, avg);
+
+      const resultSection = document.getElementById("resultSection");
+      resultSection.classList.remove("hidden");
+      // 等布局完成后再绘制，确保 canvas 尺寸正确
+      setTimeout(() => {
+        drawChart(document.getElementById("rainbowChart"), name, scores, avg);
+        resultSection.scrollIntoView({ behavior: "smooth" });
+      }, 50);
+
+      // === 自动提交数据到后端 ===
+      const shuaiAvg = (scores[11] + scores[5] + scores[3]) / 3;
+      const jiangAvg = (scores[0] + scores[1] + scores[2]) / 3;
+      const huiAvg = (scores[6] + scores[10] + scores[4]) / 3;
+      const talentType = [
+        { name: "帅才", avg: shuaiAvg },
+        { name: "将才", avg: jiangAvg },
+        { name: "慧才", avg: huiAvg }
+      ].sort((a, b) => b.avg - a.avg)[0].name;
+
+      const submitStatus = document.getElementById("submitStatus");
+      submitStatus.style.color = "#999";
+      submitStatus.textContent = "正在保存测试记录...";
+
+      if (supabaseClient) {
+        supabaseClient.from('submissions').insert({
+          child_name: name,
+          phone: phone,
+          source: sourceCode,
+          scores: scores,
+          avg_score: avg,
+          talent_type: talentType
+        }).then(({ error }) => {
+          if (!error) {
+            submitStatus.style.color = "#28a745";
+            submitStatus.textContent = "测试记录已保存";
+          } else {
+            submitStatus.style.color = "#999";
+            submitStatus.textContent = "记录保存失败（不影响报告查看）";
+          }
+        }).catch(() => {
+          submitStatus.style.color = "#999";
+          submitStatus.textContent = "记录保存失败（不影响报告查看）";
+        });
+      } else {
+        submitStatus.style.color = "#999";
+        submitStatus.textContent = "（数据库未配置，报告仅本地查看）";
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      const canvas = document.getElementById("rainbowChart");
+      if (!canvas.dataset.scores) return;
+      const name = canvas.dataset.name;
+      const scores = JSON.parse(canvas.dataset.scores);
+      const avg = parseFloat(canvas.dataset.avg);
+      drawChart(canvas, name, scores, avg);
+    });
+
+    function renderTable(scores, avgFixed) {
+      const table = document.getElementById("scoreTable");
+      let html = "<tr><th>12灵种</th>";
+      abilities.forEach(ab => html += `<th>${ab.key}</th>`);
+      html += "<th>平均分</th></tr><tr><th>得分</th>";
+      scores.forEach(s => html += `<td class="score-cell">${s}</td>`);
+      html += `<td class="avg-cell">${avgFixed}</td></tr>`;
+      table.innerHTML = html;
+    }
+
+    function renderAnalysis(name, scores, avg) {
+      const container = document.getElementById("analysis");
+      const std = Math.sqrt(scores.reduce((sum, s) => sum + Math.pow(s - avg, 2), 0) / scores.length);
+      const balanceText = std <= 1.2
+        ? "各项能力发展较为均衡，差异较小。"
+        : "各项能力波动较大，建议优先补齐明显短板，同时巩固优势。";
+
+      let levelText = "";
+      if (avg >= 8.5) levelText = "整体表现优秀";
+      else if (avg >= 7) levelText = "整体表现良好";
+      else if (avg >= 5.5) levelText = "整体表现中等偏上";
+      else levelText = "整体还有较大提升空间";
+
+      // --- 三才判定 ---
+      // 帅才: 领导力(11) + 主角力(5) + 效能力(3)
+      const shuaiAvg = ((scores[11] + scores[5] + scores[3]) / 3);
+      // 将才: 贵人力(0) + 幸福力(1) + 沟通力(2)
+      const jiangAvg = ((scores[0] + scores[1] + scores[2]) / 3);
+      // 慧才: 专注力(6) + 学习力(10) + 自控力(4)
+      const huiAvg = ((scores[6] + scores[10] + scores[4]) / 3);
+
+      const talentTypes = [
+        { name: "帅才", avg: shuaiAvg, abilities: "领导力、主角力、效能力", desc: "帅才型孩子天生具有领袖气质，做事高效、目标明确、对自己有要求。他们善于带领团队、制定目标并推动执行，是天生的组织者和决策者。建议：多给孩子承担项目负责人的机会（如小组长、活动策划），在挑战中锻炼统筹与决策能力；同时注意培养耐心与倾听，避免因过于强势而忽略他人感受。" },
+        { name: "将才", avg: jiangAvg, abilities: "贵人力、幸福力、沟通力", desc: "将才型孩子情商高、人缘好，擅长与人打交道，能轻松获得老师和同学的喜爱。他们善于凝聚人心、协调资源、化解矛盾，是天生的外交官。建议：发挥孩子的社交优势担任班级联络或小组协调角色，通过沟通表达来带动学习与合作；同时注意深化思维深度，避免浮于表面的人际关系。" },
+        { name: "慧才", avg: huiAvg, abilities: "专注力、学习力、自控力", desc: "慧才型孩子具备极强的学习能力和自律精神，能沉下心钻研，在学术上表现突出。他们善于独立思考、深度学习和自我管理，是天生的学者。建议：为孩子提供丰富的学习资源和挑战性内容（如竞赛、课题研究），同时鼓励其参与团队活动，避免因过度专注学业而忽略人际交往与表达能力的培养。" }
+      ];
+
+      talentTypes.sort((a, b) => b.avg - a.avg);
+      const topTalent = talentTypes[0];
+      // --- 三才判定结束 ---
+
+      const talentHtml = `
+        <div class="talent-box">
+          <h3>天赋类型判定</h3>
+          <div class="talent-type">${topTalent.name}</div>
+          <div class="talent-detail">
+            <span class="talent-item">核心能力：<strong>${topTalent.abilities}</strong></span>
+            <span class="talent-item">均分：<strong>${topTalent.avg.toFixed(1)}</strong></span>
+          </div>
+          <p class="talent-desc">${topTalent.desc}</p>
+        </div>
+      `;
+
+      document.getElementById("summaryBox").innerHTML = `
+        <p><strong>${name}</strong>的平均分为 <strong>${avg.toFixed(1)}</strong> 分，${levelText}。</p>
+        <p>${balanceText} 下方根据优势能力和弱势能力给出与学习相关的具体建议。</p>
+      `;
+
+      const indexed = scores.map((s, i) => ({ score: s, index: i }));
+      const strengths = indexed.filter(x => x.score >= 8).sort((a, b) => b.score - a.score).slice(0, 3);
+      const weaknesses = indexed.filter(x => x.score <= 5).sort((a, b) => a.score - b.score).slice(0, 3);
+
+      let html = talentHtml;
+      html += "<h3>优势能力分析（得分 ≥ 8 分）</h3>";
+      if (strengths.length === 0) {
+        html += `<div class="empty-tip">目前没有得分达到 8 分的明显优势项。建议先集中提升 1-2 项较接近 8 分的能力，帮助孩子建立成就感。</div>`;
+      } else {
+        strengths.forEach(item => {
+          const ab = abilities[item.index];
+          html += buildResultCard(ab, item.score, "strength");
+        });
+      }
+
+      html += "<h3>弱势能力分析（得分 ≤ 5 分）</h3>";
+      if (weaknesses.length === 0) {
+        html += `<div class="empty-tip">目前没有得分低于 5 分的明显弱势项。建议保持当前节奏，在 6-7 分的项目上继续精进。</div>`;
+      } else {
+        weaknesses.forEach(item => {
+          const ab = abilities[item.index];
+          html += buildResultCard(ab, item.score, "weakness");
+        });
+      }
+
+      html += "<h3>近期发展目标</h3>";
+      html += `<div class="ability-result">`;
+      html += `<ul>`;
+      if (weaknesses.length > 0) {
+        html += `<li><strong>短期（1-3个月）：</strong>重点提升${weaknesses.map(x => abilities[x.index].key).join("、")}，目标每项提升 1-2 分。</li>`;
+      } else {
+        html += `<li><strong>短期（1-3个月）：</strong>巩固现有优势，在 6-7 分的中等能力中选择 1 项集中突破。</li>`;
+      }
+      html += `<li><strong>中期（3-6个月）：</strong>将薄弱项全部提升到 6 分以上，优势项保持 8 分以上。</li>`;
+      html += `<li><strong>长期（6-12个月）：</strong>12 项能力均衡发展，平均分达到 7 分以上，形成孩子独特的核心竞争力。</li>`;
+      html += `</ul></div>`;
+
+      container.innerHTML = html;
+
+      // 保存当前数据供重绘使用
+      const canvas = document.getElementById("rainbowChart");
+      canvas.dataset.name = name;
+      canvas.dataset.scores = JSON.stringify(scores);
+      canvas.dataset.avg = avg;
+    }
+
+    function buildResultCard(ab, score, type) {
+      const info = type === "strength" ? ab.high : ab.low;
+      const badgeClass = type === "strength" ? "strength" : "weakness";
+      const label = type === "strength" ? "优势" : "待提升";
+      return `
+        <div class="ability-result ${type}">
+          <h4>${ab.key}（${score} 分）<span class="badge ${badgeClass}">${label}</span></h4>
+          <p>${info.msg}</p>
+          <ul>
+            ${info.tips.map(tip => `<li>${tip}</li>`).join("")}
+          </ul>
+        </div>
+      `;
+    }
+
+    // ===== 彩虹图点击放大 =====
+    const lightbox = document.getElementById("lightbox");
+    const lightboxImg = document.getElementById("lightboxImg");
+    const lightboxClose = document.getElementById("lightboxClose");
+
+    document.querySelector(".chart-wrap").addEventListener("click", () => {
+      const chartCanvas = document.getElementById("rainbowChart");
+      if (!chartCanvas) return;
+      lightboxImg.src = chartCanvas.toDataURL("image/png");
+      lightbox.classList.add("active");
+    });
+
+    function closeLightbox() {
+      lightbox.classList.remove("active");
+      lightboxImg.src = "";
+    }
+    lightboxClose.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeLightbox();
+    });
+    lightbox.addEventListener("click", (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      const result = document.getElementById("resultSection");
+      if (typeof html2canvas === "undefined") {
+        alert("图片保存库尚未加载，请检查网络后重试。");
+        return;
+      }
+      html2canvas(result, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
+        const link = document.createElement("a");
+        const name = document.getElementById("childName").value.trim() || "孩子";
+        link.download = `${name}_生命彩虹图.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    });
+  </script>
+</body>
+</html>
