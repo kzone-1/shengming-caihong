@@ -854,4 +854,68 @@
           <h3>优势能力分析（得分 ≥ 8 分）</h3>
           ${strengths.length === 0
             ? '<div class="report-empty">目前没有得分达到 8 分的明显优势项。建议先集中提升 1-2 项较接近 8 分的能力，帮助孩子建立成就感。</div>'
-            : strengths.map(x => buildAbilityCard(ABILITIES_DATA[x.index]
+            : strengths.map(x => buildAbilityCard(ABILITIES_DATA[x.index], x.score, "strength")).join("")}
+        </div>
+
+        <div class="report-section">
+          <h3>弱势能力分析（得分 ≤ 5 分）</h3>
+          ${weaknesses.length === 0
+            ? '<div class="report-empty">目前没有得分低于 5 分的明显弱势项。建议保持当前节奏，在 6-7 分的项目上继续精进。</div>'
+            : weaknesses.map(x => buildAbilityCard(ABILITIES_DATA[x.index], x.score, "weakness")).join("")}
+        </div>
+
+        <div class="report-section report-goals">
+          <h3>近期发展目标</h3>
+          <ul>
+            ${weaknesses.length > 0
+              ? `<li><strong>短期（1-3个月）：</strong>重点提升${weaknesses.map(x => ABILITIES_DATA[x.index].key).join("、")}，目标每项提升 1-2 分。</li>`
+              : `<li><strong>短期（1-3个月）：</strong>巩固现有优势，在 6-7 分的中等能力中选择 1 项集中突破。</li>`}
+            <li><strong>中期（3-6个月）：</strong>将薄弱项全部提升到 6 分以上，优势项保持 8 分以上。</li>
+            <li><strong>长期（6-12个月）：</strong>12 项能力均衡发展，平均分达到 7 分以上，形成孩子独特的核心竞争力。</li>
+          </ul>
+        </div>
+      `;
+
+      document.getElementById("reportBody").innerHTML = html;
+      document.getElementById("reportOverlay").classList.add("active");
+    }
+
+    // 生成单个能力分析卡片（与家长端 buildResultCard 一致）
+    function buildAbilityCard(ab, score, type) {
+      const info = type === "strength" ? ab.high : ab.low;
+      const label = type === "strength" ? "优势" : "待提升";
+      return `
+        <div class="ability-card ${type}">
+          <h4>${ab.key}（${score} 分）<span class="badge ${type}">${label}</span></h4>
+          <p>${info.msg}</p>
+          <ul>${info.tips.map(tip => `<li>${tip}</li>`).join("")}</ul>
+        </div>
+      `;
+    }
+
+    // 关闭报告
+    window.closeReport = function() {
+      document.getElementById("reportOverlay").classList.remove("active");
+      document.getElementById("reportBody").innerHTML = "";
+    };
+    // 点击遮罩关闭
+    document.getElementById("reportOverlay").addEventListener("click", (e) => {
+      if (e.target === document.getElementById("reportOverlay")) closeReport();
+    });
+  </script>
+
+  <!-- 分析报告弹窗 -->
+  <div class="report-overlay" id="reportOverlay">
+    <div class="report-modal">
+      <div class="report-modal-head">
+        <div>
+          <h2 id="reportTitle">天赋分析报告</h2>
+          <div class="sub" id="reportSub"></div>
+        </div>
+        <button class="report-close" onclick="closeReport()">关闭</button>
+      </div>
+      <div class="report-body" id="reportBody"></div>
+    </div>
+  </div>
+</body>
+</html>
