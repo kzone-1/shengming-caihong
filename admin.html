@@ -511,11 +511,11 @@
             <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">
               <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;">
                 <div style="display:flex;gap:6px;align-items:center;width:100%;">
-                  <span id="short-${a.code}" style="font-family:monospace;font-size:13px;color:#c2185b;background:#fdeef3;padding:5px 10px;border-radius:6px;font-weight:700;white-space:nowrap;">生成中...</span>
-                  <button onclick="copyShort('${a.code}')" style="padding:4px 10px;background:#ff6b8a;color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer;">复制短链</button>
+                  <span id="long-${a.code}" style="font-family:monospace;font-size:12px;color:#0d7377;background:#eef6f6;padding:5px 10px;border-radius:6px;font-weight:700;max-width:260px;word-break:break-all;line-height:1.4;">加载中...</span>
+                  <button onclick="copyLong('${a.code}')" style="padding:4px 10px;background:#0d7377;color:#fff;border:none;border-radius:4px;font-size:12px;cursor:pointer;white-space:nowrap;">复制长链接</button>
                 </div>
-                <button onclick="toggleLong('${a.code}')" style="padding:2px 0;background:none;border:none;color:#888;font-size:11px;cursor:pointer;">查看长链接 ▾</button>
-                <div id="long-${a.code}" style="display:none;font-family:monospace;font-size:11px;color:#666;background:#f8f9fa;padding:6px 8px;border-radius:4px;max-width:320px;word-break:break-all;line-height:1.5;"></div>
+                <button onclick="toggleShort('${a.code}')" style="padding:2px 0;background:none;border:none;color:#888;font-size:11px;cursor:pointer;">查看短链 ▾</button>
+                <div id="short-${a.code}" style="display:none;font-family:monospace;font-size:11px;color:#c2185b;background:#fdeef3;padding:6px 8px;border-radius:4px;max-width:260px;word-break:break-all;line-height:1.5;"></div>
               </div>
             </td>
             <td style="padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0;">
@@ -524,14 +524,14 @@
           </tr>`;
         }).join("");
 
-        // 异步为每个助教生成短链
+        // 长链接默认直接显示（微信内可点开），短链异步生成供备用查看
         assists.forEach(a => {
           const link = base + "?c=" + a.code;
+          const lel = document.getElementById("long-" + a.code);
+          if (lel) lel.textContent = link;
           shorten(link).then(s => {
             const el = document.getElementById("short-" + a.code);
             if (el) el.textContent = s || link;
-            const lel = document.getElementById("long-" + a.code);
-            if (lel) lel.textContent = link;
           });
         });
       } catch (e) {
@@ -569,7 +569,15 @@
       } catch (e) { alert("删除失败，请重试"); }
     };
 
-    // 复制助教短链
+    // 复制助教长链接（微信内可点开）
+    window.copyLong = async function(code) {
+      const el = document.getElementById("long-" + code);
+      const link = el ? el.textContent : "";
+      try { await navigator.clipboard.writeText(link); alert("长链接已复制，可直接转发给家长"); }
+      catch(e) { prompt("复制链接：", link); }
+    };
+
+    // 复制助教短链（备用）
     window.copyShort = async function(code) {
       const el = document.getElementById("short-" + code);
       const link = el ? el.textContent : "";
@@ -577,14 +585,14 @@
       catch(e) { prompt("复制链接：", link); }
     };
 
-    // 展开/收起长链接
-    window.toggleLong = function(code) {
-      const box = document.getElementById("long-" + code);
+    // 展开/收起短链
+    window.toggleShort = function(code) {
+      const box = document.getElementById("short-" + code);
       const btn = event.target;
       if (!box) return;
       const isOpen = box.style.display === "block";
       box.style.display = isOpen ? "none" : "block";
-      btn.textContent = isOpen ? "查看长链接 ▾" : "收起长链接 ▴";
+      btn.textContent = isOpen ? "查看短链 ▾" : "收起短链 ▴";
     };
 
     // 调用 tinyurl 生成短链（对同一长链接固定返回同一短码）
