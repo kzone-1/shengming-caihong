@@ -75,12 +75,12 @@
     <!-- 结果：显示专属链接 -->
     <div class="result" id="resultWrap">
       <div class="hi">你好，<b id="whoName"></b>！这是你的专属链接：</div>
-      <div class="shortlabel">短链接（推荐，可直接复制转发）</div>
-      <div class="shortbox" id="shortLink">生成中...</div>
-      <button class="btn" id="copyBtn">复制短链接</button>
-      <div class="longtoggle" id="longToggle">查看/复制完整长链接 ▼</div>
-      <div class="longbox" id="linkText"></div>
-      <div class="tip">把这条链接转发给家长，家长打开做测试后，<br>记录会自动归到你的名下。</div>
+      <div class="shortlabel">专属链接（直接复制转发，家长微信内可点开）</div>
+      <div class="shortbox" id="linkText" style="background:#eef6f6;border-color:#0d7377;color:#0d7377;">生成中...</div>
+      <button class="btn" id="copyBtn" style="background:linear-gradient(90deg,#0d7377,#094f52);">复制链接</button>
+      <div class="longtoggle" id="shortToggle">查看短链接 ▼</div>
+      <div class="longbox" id="shortBox"></div>
+      <div class="tip">把这条链接转发给家长，家长在微信里点开即可填写，<br>填写后记录会自动归到你的名下。</div>
       <div class="back"><a href="index.html">返回首页</a></div>
     </div>
   </div>
@@ -116,10 +116,10 @@
         document.getElementById("whoName").textContent = data.name;
         document.getElementById("linkText").textContent = link;
 
-        // 生成短链（tinyurl，对同一长链接固定返回同一短码）
-        const shortEl = document.getElementById("shortLink");
-        shortEl.textContent = "生成中...";
-        shorten(link).then(s => { if (s) shortEl.textContent = s; else shortEl.textContent = link; });
+        // 短链作为备用折叠展示（同一长链接固定返回同一短码）
+        shorten(link).then(s => {
+          document.getElementById("shortBox").textContent = s || link;
+        });
 
         loginWrap.style.display = "none";
         resultWrap.style.display = "block";
@@ -130,26 +130,26 @@
       }
     });
 
-    // 复制短链
+    // 复制长链接
     document.getElementById("copyBtn").addEventListener("click", async () => {
-      const link = document.getElementById("shortLink").textContent;
+      const link = document.getElementById("linkText").textContent;
       try {
         await navigator.clipboard.writeText(link);
         const b = document.getElementById("copyBtn");
         b.textContent = "✅ 已复制";
-        setTimeout(() => { b.textContent = "复制短链接"; }, 1500);
+        setTimeout(() => { b.textContent = "复制链接"; }, 1500);
       } catch(e) {
         prompt("复制链接：", link);
       }
     });
 
-    // 展开/收起完整长链接
-    const longToggle = document.getElementById("longToggle");
-    const longBox = document.getElementById("linkText");
-    longToggle.addEventListener("click", () => {
-      const isOpen = longBox.style.display === "block";
-      longBox.style.display = isOpen ? "none" : "block";
-      longToggle.textContent = isOpen ? "查看/复制完整长链接 ▼" : "收起完整长链接 ▲";
+    // 展开/收起短链接
+    const shortToggle = document.getElementById("shortToggle");
+    const shortBox = document.getElementById("shortBox");
+    shortToggle.addEventListener("click", () => {
+      const isOpen = shortBox.style.display === "block";
+      shortBox.style.display = isOpen ? "none" : "block";
+      shortToggle.textContent = isOpen ? "查看短链接 ▼" : "收起短链接 ▲";
     });
 
     // 调用 tinyurl 生成短链
