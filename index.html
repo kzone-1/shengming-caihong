@@ -228,6 +228,93 @@
     .btn-secondary:hover { background: #dde2e6; }
     .hidden { display: none !important; }
 
+    /* ===== 历史记录弹窗 ===== */
+    .btn-history {
+      margin-left: 12px;
+    }
+    .history-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 16px;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .history-overlay.active { display: flex; }
+    .history-modal {
+      background: #fff;
+      border-radius: 12px;
+      max-width: 640px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+      position: relative;
+    }
+    .history-modal h2 { margin: 0 0 6px; font-size: 20px; color: var(--primary-dark); }
+    .history-modal .history-sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+    .history-close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 28px;
+      line-height: 1;
+      color: #888;
+      cursor: pointer;
+    }
+    .history-close:hover { color: #333; }
+    .history-search {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .history-search input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+    }
+    .history-search input:focus { border-color: var(--primary); }
+    .history-search button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .history-search button:hover { background: var(--primary-dark); }
+    .history-list { max-height: 380px; overflow-y: auto; }
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid #e3e3e3;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .history-item:hover { background: #f2fafa; border-color: var(--primary); }
+    .history-item .hi-main { flex: 1; min-width: 0; }
+    .history-item .hi-name { font-weight: 700; font-size: 15px; color: var(--text); }
+    .history-item .hi-time { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .history-item .hi-right { text-align: right; flex-shrink: 0; }
+    .history-item .hi-avg { font-weight: 700; font-size: 18px; color: var(--primary); }
+    .history-item .hi-type { font-size: 12px; color: #888; }
+    .history-empty { text-align: center; color: var(--muted); padding: 30px 0; }
+    .history-loading { text-align: center; color: var(--muted); padding: 30px 0; }
+    .history-error { text-align: center; color: #c0392b; padding: 20px 0; }
+
     .summary-box {
       background: #eef7f7;
       border-left: 4px solid var(--primary);
@@ -436,6 +523,7 @@
       </div>
       <div id="abilityInputs"></div>
       <button id="generateBtn" class="btn-primary">生成生命彩虹图</button>
+      <button id="historyBtn" class="btn-secondary btn-history">查看历史记录</button>
     </section>
 
     <section id="resultSection" class="hidden">
@@ -461,6 +549,20 @@
   <div class="lightbox-overlay" id="lightbox">
     <button class="lightbox-close" id="lightboxClose">&times;</button>
     <img id="lightboxImg" alt="放大查看生命彩虹图" />
+  </div>
+
+  <!-- 历史记录弹窗 -->
+  <div class="history-overlay" id="historyOverlay">
+    <div class="history-modal">
+      <button class="history-close" id="historyClose">&times;</button>
+      <h2>历史记录查询</h2>
+      <p class="history-sub">输入报名课程手机号，查询该手机号下的全部历史测试记录</p>
+      <div class="history-search">
+        <input type="tel" id="historyPhone" placeholder="请输入11位手机号" maxlength="11" inputmode="numeric" />
+        <button id="historySearchBtn">查询</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
   </div>
   <script>
     // === Supabase 配置（复制你的 Supabase 项目 URL 和 anon key 替换下面两个值）===
@@ -1180,6 +1282,123 @@
           </ul>
         </div>
       `;
+    }
+
+    // ===== 历史记录查看 =====
+    const historyOverlay = document.getElementById("historyOverlay");
+    const historyList = document.getElementById("historyList");
+    const historyPhone = document.getElementById("historyPhone");
+    const historyClose = document.getElementById("historyClose");
+
+    document.getElementById("historyBtn").addEventListener("click", () => {
+      historyOverlay.classList.add("active");
+      // 若输入区已填手机号，自动带入
+      const curPhone = document.getElementById("parentPhone").value.trim();
+      if (curPhone && historyPhone.value !== curPhone) historyPhone.value = curPhone;
+      historyPhone.focus();
+    });
+    historyClose.addEventListener("click", () => historyOverlay.classList.remove("active"));
+    historyOverlay.addEventListener("click", (e) => {
+      if (e.target === historyOverlay) historyOverlay.classList.remove("active");
+    });
+
+    document.getElementById("historySearchBtn").addEventListener("click", doHistorySearch);
+    historyPhone.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") doHistorySearch();
+    });
+
+    async function doHistorySearch() {
+      const phone = historyPhone.value.trim();
+      if (!/^1\d{10}$/.test(phone)) {
+        historyList.innerHTML = `<div class="history-error">请输入正确的11位手机号。</div>`;
+        return;
+      }
+      if (!supabaseClient) {
+        historyList.innerHTML = `<div class="history-error">数据库未配置，无法查询历史记录。</div>`;
+        return;
+      }
+      historyList.innerHTML = `<div class="history-loading">正在查询，请稍候...</div>`;
+      try {
+        const { data, error } = await supabaseClient
+          .from('submissions')
+          .select('id, child_name, phone, scores, avg_score, talent_type, created_at')
+          .eq('phone', phone)
+          .order('created_at', { ascending: false });
+        if (error) {
+          historyList.innerHTML = `<div class="history-error">查询失败：${error.message}</div>`;
+          return;
+        }
+        if (!data || data.length === 0) {
+          historyList.innerHTML = `<div class="history-empty">该手机号暂无历史记录。<br>请确认输入的手机号与填写时一致。</div>`;
+          return;
+        }
+        let html = "";
+        data.forEach((r) => {
+          const time = r.created_at ? new Date(r.created_at).toLocaleString("zh-CN", { hour12: false }) : "";
+          const scores = Array.isArray(r.scores) ? r.scores : [];
+          const avg = r.avg_score != null ? Number(r.avg_score).toFixed(1) : (scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : "-");
+          html += `
+            <div class="history-item" data-id="${r.id}">
+              <div class="hi-main">
+                <div class="hi-name">${escapeHtml(r.child_name || "未命名")}</div>
+                <div class="hi-time">${time || ""}</div>
+              </div>
+              <div class="hi-right">
+                <div class="hi-avg">${avg} 分</div>
+                <div class="hi-type">${escapeHtml(r.talent_type || "")}</div>
+              </div>
+            </div>`;
+        });
+        historyList.innerHTML = html;
+        historyList.querySelectorAll(".history-item").forEach((item) => {
+          item.addEventListener("click", () => {
+            const id = item.dataset.id;
+            const rec = data.find((x) => String(x.id) === String(id));
+            if (rec) showHistoryRecord(rec);
+          });
+        });
+      } catch (err) {
+        historyList.innerHTML = `<div class="history-error">查询出错：${err.message}</div>`;
+      }
+    }
+
+    function showHistoryRecord(rec) {
+      const scores = Array.isArray(rec.scores) ? rec.scores : [];
+      if (scores.length !== abilities.length) {
+        historyList.innerHTML = `<div class="history-error">该记录数据不完整，无法展示报告。</div>`;
+        return;
+      }
+      // 关闭弹窗
+      historyOverlay.classList.remove("active");
+      // 填充表单姓名与手机号
+      document.getElementById("childName").value = rec.child_name || "";
+      document.getElementById("parentPhone").value = rec.phone || "";
+      // 回填各项评分到能力卡片
+      scores.forEach((s, i) => {
+        const numInput = document.getElementById(`num-${i}`);
+        if (numInput) numInput.value = s;
+        const btns = document.querySelectorAll(`#btns-${i} .score-btn`);
+        btns.forEach((b) => b.classList.remove("selected"));
+        btns.forEach((b) => { if (parseInt(b.dataset.score, 10) === s) b.classList.add("selected"); });
+        const valEl = document.getElementById(`val-${i}`);
+        if (valEl) { valEl.textContent = s; valEl.style.color = ""; }
+      });
+      // 计算平均分并渲染
+      const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const avgFixed = avg.toFixed(1);
+      renderTable(scores, avgFixed);
+      renderAnalysis(rec.child_name || "", scores, avg);
+      const resultSection = document.getElementById("resultSection");
+      resultSection.classList.remove("hidden");
+      setTimeout(() => {
+        drawChart(document.getElementById("rainbowChart"), rec.child_name || "", scores, avg);
+        resultSection.scrollIntoView({ behavior: "smooth" });
+      }, 50);
+    }
+
+    function escapeHtml(str) {
+      if (str == null) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
     // ===== 彩虹图点击放大 =====
