@@ -1110,6 +1110,25 @@
     // 当前打开的报告记录（供下载使用）
     let currentReport = null;
 
+    // 辅助：临时展开报告内容以便 html2canvas 完整截取
+    function expandReportForCapture() {
+      const modal = document.querySelector(".report-modal");
+      const body = document.getElementById("reportBody");
+      modal.dataset.origOverflow = modal.style.overflow;
+      modal.style.overflow = "visible";
+      body.dataset.origMaxH = body.style.maxHeight;
+      body.dataset.origOverflow = body.style.overflowY;
+      body.style.maxHeight = "none";
+      body.style.overflowY = "visible";
+    }
+    function restoreReportAfterCapture() {
+      const modal = document.querySelector(".report-modal");
+      const body = document.getElementById("reportBody");
+      modal.style.overflow = modal.dataset.origOverflow || "";
+      body.style.maxHeight = body.dataset.origMaxH || "";
+      body.style.overflowY = body.dataset.origOverflow || "";
+    }
+
     // 下载报告为 PNG 图片
     window.downloadReport = async function() {
       const btn = document.getElementById("downloadReportBtn");
@@ -1125,6 +1144,7 @@
         const headActions = head.querySelector(".report-head-actions");
         const actionsDisplay = headActions.style.display;
         headActions.style.display = "none";
+        expandReportForCapture();
         await new Promise(r => setTimeout(r, 100));
 
         const canvas = await html2canvas(modal, {
@@ -1134,6 +1154,7 @@
           logging: false
         });
         headActions.style.display = actionsDisplay;
+        restoreReportAfterCapture();
 
         const link = document.createElement("a");
         const safeName = (currentReport.childName || "报告").replace(/[\\/:*?"<>|]/g, "_");
@@ -1166,6 +1187,7 @@
         const headActions = head.querySelector(".report-head-actions");
         const actionsDisplay = headActions.style.display;
         headActions.style.display = "none";
+        expandReportForCapture();
         await new Promise(r => setTimeout(r, 100));
 
         const canvas = await html2canvas(modal, {
@@ -1175,6 +1197,7 @@
           logging: false
         });
         headActions.style.display = actionsDisplay;
+        restoreReportAfterCapture();
 
         const imgData = canvas.toDataURL("image/jpeg", 0.95);
         const pdf = new jspdf.jsPDF("p", "mm", "a4");
