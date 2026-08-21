@@ -1427,18 +1427,33 @@
       if (e.target === lightbox) closeLightbox();
     });
 
+    // 辅助：临时展开内容以便 html2canvas 完整截取（防止 max-height / overflow 截断）
+    function expandResultForCapture(result) {
+      result.style.maxHeight = "none";
+      result.style.overflow = "visible";
+    }
+    function restoreResultAfterCapture(result, origStyle) {
+      result.style.maxHeight = origStyle.maxHeight || "";
+      result.style.overflow = origStyle.overflow || "";
+    }
+
     document.getElementById("saveBtn").addEventListener("click", () => {
       const result = document.getElementById("resultSection");
       if (typeof html2canvas === "undefined") {
         alert("图片保存库尚未加载，请检查网络后重试。");
         return;
       }
-      html2canvas(result, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
+      const origStyle = { maxHeight: result.style.maxHeight, overflow: result.style.overflow };
+      expandResultForCapture(result);
+      html2canvas(result, { scale: 2, backgroundColor: "#ffffff", useCORS: true }).then(canvas => {
+        restoreResultAfterCapture(result, origStyle);
         const link = document.createElement("a");
         const name = document.getElementById("childName").value.trim() || "孩子";
         link.download = `${name}_生命彩虹图.png`;
         link.href = canvas.toDataURL("image/png");
         link.click();
+      }).catch(() => {
+        restoreResultAfterCapture(result, origStyle);
       });
     });
 
@@ -1449,7 +1464,10 @@
         return;
       }
       const name = document.getElementById("childName").value.trim() || "孩子";
+      const origStyle = { maxHeight: result.style.maxHeight, overflow: result.style.overflow };
+      expandResultForCapture(result);
       html2canvas(result, { scale: 2, backgroundColor: "#ffffff", useCORS: true }).then(canvas => {
+        restoreResultAfterCapture(result, origStyle);
         const imgData = canvas.toDataURL("image/jpeg", 0.95);
         const pdf = new jspdf.jsPDF("p", "mm", "a4");
         const pageW = pdf.internal.pageSize.getWidth();
@@ -1466,6 +1484,8 @@
           heightLeft -= pageH;
         }
         pdf.save(`${name}_生命彩虹图报告.pdf`);
+      }).catch(() => {
+        restoreResultAfterCapture(result, origStyle);
       });
     });
   </script>
