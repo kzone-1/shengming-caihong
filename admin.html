@@ -6,6 +6,7 @@
   <title>管理后台 - 生命彩虹图测试记录</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -955,6 +956,57 @@
       }
     };
 
+    // 下载报告为 PDF
+    window.downloadReportPdf = async function() {
+      const btn = document.getElementById("downloadPdfBtn");
+      if (!currentReport) { alert("请先打开报告再下载"); return; }
+      if (!window.html2canvas || !window.jspdf) { alert("PDF 组件未加载，请检查网络后重试"); return; }
+      btn.disabled = true;
+      const origText = btn.textContent;
+      btn.textContent = "正在生成 PDF…";
+      try {
+        const modal = document.querySelector(".report-modal");
+        // 截图时隐藏下载/关闭按钮，避免出现在 PDF 里
+        const head = document.querySelector(".report-modal-head");
+        const headActions = head.querySelector(".report-head-actions");
+        const actionsDisplay = headActions.style.display;
+        headActions.style.display = "none";
+        await new Promise(r => setTimeout(r, 100));
+
+        const canvas = await html2canvas(modal, {
+          backgroundColor: "#ffffff",
+          scale: 2,
+          useCORS: true,
+          logging: false
+        });
+        headActions.style.display = actionsDisplay;
+
+        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+        const pdf = new jspdf.jsPDF("p", "mm", "a4");
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const imgH = canvas.height * pageW / canvas.width;
+        let heightLeft = imgH;
+        let position = 0;
+        pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
+        heightLeft -= pageH;
+        while (heightLeft > 0) {
+          position -= pageH;
+          pdf.addPage();
+          pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
+          heightLeft -= pageH;
+        }
+        const safeName = (currentReport.childName || "报告").replace(/[\\/:*?"<>|]/g, "_");
+        const date = new Date().toISOString().slice(0, 10);
+        pdf.save(`${safeName}_天赋分析报告_${date}.pdf`);
+      } catch (err) {
+        alert("PDF 下载失败：" + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
+    };
+
     // 关闭报告
     window.closeReport = function() {
       document.getElementById("reportOverlay").classList.remove("active");
@@ -974,7 +1026,8 @@
           <div class="sub" id="reportSub"></div>
         </div>
         <div class="report-head-actions">
-          <button class="btn-download-report" id="downloadReportBtn" onclick="downloadReport()">⬇ 下载报告</button>
+          <button class="btn-download-report" id="downloadReportBtn" onclick="downloadReport()">⬇ 下载图片</button>
+          <button class="btn-download-report" id="downloadPdfBtn" onclick="downloadReportPdf()">⬇ 下载 PDF</button>
           <button class="report-close" onclick="closeReport()">关闭</button>
         </div>
       </div>
