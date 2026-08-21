@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>十二灵种生命彩虹图测试</title>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     :root {
@@ -542,6 +543,7 @@
       <div class="analysis" id="analysis"></div>
 
       <button id="saveBtn" class="btn-secondary">保存结果为图片</button>
+      <button id="savePdfBtn" class="btn-secondary">保存结果为 PDF</button>
       <div id="submitStatus" style="margin-top:12px;font-size:14px;"></div>
     </section>
   </div>
@@ -1437,6 +1439,33 @@
         link.download = `${name}_生命彩虹图.png`;
         link.href = canvas.toDataURL("image/png");
         link.click();
+      });
+    });
+
+    document.getElementById("savePdfBtn").addEventListener("click", () => {
+      const result = document.getElementById("resultSection");
+      if (typeof html2canvas === "undefined" || typeof jspdf === "undefined") {
+        alert("PDF 保存库尚未加载，请检查网络后重试。");
+        return;
+      }
+      const name = document.getElementById("childName").value.trim() || "孩子";
+      html2canvas(result, { scale: 2, backgroundColor: "#ffffff", useCORS: true }).then(canvas => {
+        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+        const pdf = new jspdf.jsPDF("p", "mm", "a4");
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const imgH = canvas.height * pageW / canvas.width;
+        let heightLeft = imgH;
+        let position = 0;
+        pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
+        heightLeft -= pageH;
+        while (heightLeft > 0) {
+          position -= pageH;
+          pdf.addPage();
+          pdf.addImage(imgData, "JPEG", 0, position, pageW, imgH);
+          heightLeft -= pageH;
+        }
+        pdf.save(`${name}_生命彩虹图报告.pdf`);
       });
     });
   </script>
