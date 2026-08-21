@@ -1227,7 +1227,7 @@
 
       const indexed = scores.map((s, i) => ({ score: s, index: i }));
       const strengths = indexed.filter(x => x.score >= 8).sort((a, b) => b.score - a.score).slice(0, 3);
-      const weaknesses = indexed.filter(x => x.score <= 5).sort((a, b) => a.score - b.score).slice(0, 3);
+      const weaknesses = indexed.filter(x => x.score < avg).sort((a, b) => a.score - b.score).slice(0, 3);
 
       let html = talentHtml;
       html += "<h3>优势能力分析（得分 ≥ 8 分）</h3>";
@@ -1240,24 +1240,16 @@
         });
       }
 
-      html += "<h3>弱势能力分析（得分 ≤ 5 分）</h3>";
-      if (weaknesses.length === 0) {
-        html += `<div class="empty-tip">目前没有得分低于 5 分的明显弱势项。建议保持当前节奏，在 6-7 分的项目上继续精进。</div>`;
-      } else {
-        weaknesses.forEach(item => {
-          const ab = abilities[item.index];
-          html += buildResultCard(ab, item.score, "weakness");
-        });
-      }
+      html += "<h3>相对较低的能力</h3>";
+      weaknesses.forEach(item => {
+        const ab = abilities[item.index];
+        html += buildResultCard(ab, item.score, "weakness");
+      });
 
       html += "<h3>近期发展目标</h3>";
       html += `<div class="ability-result">`;
       html += `<ul>`;
-      if (weaknesses.length > 0) {
-        html += `<li><strong>短期（1-3个月）：</strong>重点提升${weaknesses.map(x => abilities[x.index].key).join("、")}，目标每项提升 1-2 分。</li>`;
-      } else {
-        html += `<li><strong>短期（1-3个月）：</strong>巩固现有优势，在 6-7 分的中等能力中选择 1 项集中突破。</li>`;
-      }
+      html += `<li><strong>短期（1-3个月）：</strong>重点提升${weaknesses.map(x => abilities[x.index].key).join("、")}，目标每项提升 1-2 分。</li>`;
       html += `<li><strong>中期（3-6个月）：</strong>将薄弱项全部提升到 6 分以上，优势项保持 8 分以上。</li>`;
       html += `<li><strong>长期（6-12个月）：</strong>12 项能力均衡发展，平均分达到 7 分以上，形成孩子独特的核心竞争力。</li>`;
       html += `</ul></div>`;
