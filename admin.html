@@ -271,6 +271,26 @@
       max-height: 70vh;
       overflow-y: auto;
     }
+    .chart-wrap {
+      background: #fff;
+      border: 1px solid #e6edf2;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 18px;
+      height: 380px;
+      position: relative;
+    }
+    .chart-wrap h3 { margin: 0 0 8px; font-size: 16px; color: #333; }
+    .chart-hint {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 10px;
+      text-align: center;
+      font-size: 11px;
+      color: #999;
+    }
+    #rainbowChart { display: block; width: 100%; }
     .report-summary {
       background: #fff;
       border: 1px solid #e6edf2;
@@ -793,6 +813,173 @@
       { key: "领导力", high: { msg: "孩子有号召力和组织意识，能带动伙伴一起完成任务，这是未来管理潜质。", tips: ["鼓励孩子组织学习小组，带领同学一起复习或完成项目。","让孩子策划班级或家庭活动，练习分工和授权。","引导孩子理解「领导力不是命令别人，而是成就团队」。"] }, low: { msg: "孩子目前更习惯跟随，需要在安全场景中练习承担责任和协调资源。", tips: ["给孩子分配一个他可以负责的小任务，并让他自己招募帮手。","定期召开家庭会议，让孩子主持议程、记录决议。","鼓励孩子在学校竞选一次小组长或活动负责人。","通过桌游、合作项目练习分工和协商。"] } }
     ];
 
+    // 能力 key 列表（与 index.html 一致，用于绘制彩虹图 X 轴标签）
+    const abilities = ABILITIES_DATA.map(ab => ({ key: ab.key }));
+
+    // 绘制生命彩虹图（折线图，与家长端 index.html 的 drawChart 逻辑一致）
+    function drawChart(canvas, name, scores, avg) {
+      const wrap = canvas.parentElement;
+      const dpr = window.devicePixelRatio || 1;
+      const cssWidth = wrap.clientWidth;
+      const cssHeight = wrap.clientHeight;
+      canvas.width = cssWidth * dpr;
+      canvas.height = cssHeight * dpr;
+      canvas.style.width = cssWidth + "px";
+      canvas.style.height = cssHeight + "px";
+
+      const isNarrow = cssWidth < 500;
+      const axisFont = isNarrow ? "11px Microsoft YaHei, sans-serif" : "13px Microsoft YaHei, sans-serif";
+      const titleFont = isNarrow ? "bold 15px Microsoft YaHei, sans-serif" : "bold 17px Microsoft YaHei, sans-serif";
+      const axisTitleFont = isNarrow ? "bold 12px Microsoft YaHei, sans-serif" : "bold 14px Microsoft YaHei, sans-serif";
+      const pointRadius = isNarrow ? 4 : 6;
+      const mainLineWidth = isNarrow ? 2.5 : 3.5;
+
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+      // 白色背景
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, cssWidth, cssHeight);
+
+      const padding = isNarrow
+        ? { top: 52, right: 28, bottom: 110, left: 42 }
+        : { top: 60, right: 40, bottom: 94, left: 54 };
+      const chartW = cssWidth - padding.left - padding.right;
+      const chartH = cssHeight - padding.top - padding.bottom;
+      const chartLeft = padding.left;
+      const chartTop = padding.top;
+      const chartRight = chartLeft + chartW;
+      const chartBottom = chartTop + chartH;
+
+      const yMax = 10;
+      const yMin = 0;
+
+      function yToPx(v) {
+        return chartBottom - ((v - yMin) / (yMax - yMin)) * chartH;
+      }
+      function xToPx(i) {
+        return chartLeft + (i / (scores.length - 1)) * chartW;
+      }
+
+      // 黄色背景
+      ctx.fillStyle = "#fff176";
+      ctx.fillRect(chartLeft, chartTop, chartW, chartH);
+
+      // 网格线
+      ctx.strokeStyle = "rgba(0,0,0,0.12)";
+      ctx.lineWidth = 1;
+      for (let y = yMin; y <= yMax; y++) {
+        const yy = yToPx(y);
+        ctx.beginPath();
+        ctx.moveTo(chartLeft, yy);
+        ctx.lineTo(chartRight, yy);
+        ctx.stroke();
+      }
+
+      // 坐标轴
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(chartLeft, chartTop);
+      ctx.lineTo(chartLeft, chartBottom);
+      ctx.lineTo(chartRight, chartBottom);
+      ctx.stroke();
+
+      // Y 轴标签 + 竖轴标题
+      ctx.fillStyle = "#333";
+      ctx.font = axisFont;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let y = yMin; y <= yMax; y++) {
+        ctx.fillText(y, chartLeft - 8, yToPx(y));
+      }
+      ctx.save();
+      ctx.translate(isNarrow ? 12 : 14, chartTop + chartH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = "center";
+      ctx.font = axisTitleFont;
+      ctx.fillText("得分", 0, 0);
+      ctx.restore();
+
+      // X 轴标签
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.save();
+      const labels = abilities.map(ab => ab.key);
+      labels.forEach((label, i) => {
+        const x = xToPx(i);
+        if (isNarrow) {
+          ctx.save();
+          ctx.translate(x, chartBottom + 8);
+          ctx.rotate(-Math.PI / 2);
+          ctx.textAlign = "right";
+          ctx.textBaseline = "middle";
+          ctx.fillText(label, 0, 0);
+          ctx.restore();
+        } else {
+          ctx.fillText(label, x, chartBottom + 10);
+        }
+      });
+      ctx.restore();
+      // 横轴标题
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.font = axisTitleFont;
+      ctx.fillText("能力维度", chartLeft + chartW / 2, chartBottom + (isNarrow ? 72 : 34));
+
+      // 标准线（固定在 7 分）
+      const baselineY = yToPx(7);
+      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = "#e63946";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(chartLeft, baselineY);
+      ctx.lineTo(chartRight, baselineY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 折线
+      ctx.strokeStyle = "#0d7377";
+      ctx.lineWidth = mainLineWidth;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      scores.forEach((s, i) => {
+        const x = xToPx(i);
+        const y = yToPx(s);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // 数据点
+      scores.forEach((s, i) => {
+        const x = xToPx(i);
+        const y = yToPx(s);
+        ctx.beginPath();
+        ctx.arc(x, y, pointRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#0d7377";
+        ctx.fill();
+        ctx.lineWidth = isNarrow ? 2 : 3;
+        ctx.strokeStyle = "#fff";
+        ctx.stroke();
+
+        ctx.fillStyle = "#0d7377";
+        ctx.font = isNarrow ? "bold 11px Microsoft YaHei, sans-serif" : "bold 14px Microsoft YaHei, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(s, x, y - (isNarrow ? 5 : 8));
+      });
+
+      // 标题
+      ctx.fillStyle = "#333";
+      ctx.font = titleFont;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText(`${name}的生命彩虹图`, cssWidth / 2, isNarrow ? 12 : 18);
+    }
+
     // 打开某条记录的分析报告
     function openReport(id) {
       const r = allRecords.find(x => x.id === id);
@@ -861,6 +1048,11 @@
           </div>
         </div>
 
+        <div class="chart-wrap">
+          <h3>生命彩虹图</h3>
+          <canvas id="rainbowChart"></canvas>
+        </div>
+
         <div class="report-section" style="overflow-x:auto;">
           <h3>12 灵种得分一览</h3>
           <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:620px;">
@@ -897,6 +1089,9 @@
 
       document.getElementById("reportBody").innerHTML = html;
       document.getElementById("reportOverlay").classList.add("active");
+      // 弹窗显示后再绘制生命彩虹图（此时 chart-wrap 才有实际宽度）
+      const chartCanvas = document.getElementById("rainbowChart");
+      if (chartCanvas) setTimeout(() => drawChart(chartCanvas, r.childName, scores, avg), 50);
     }
 
     // 生成单个能力分析卡片（与家长端 buildResultCard 一致）
