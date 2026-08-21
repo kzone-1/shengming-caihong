@@ -1021,10 +1021,10 @@
       const topTalent = talentTypes[0];
       const talentCls = topTalent.name === "帅才" ? "shuai" : (topTalent.name === "将才" ? "jiang" : "hui");
 
-      // 优势 / 弱势能力
+      // 优势 / 相对较低能力（始终展示最低3项，不依赖固定阈值）
       const indexed = scores.map((s, i) => ({ score: s, index: i }));
       const strengths = indexed.filter(x => x.score >= 8).sort((a, b) => b.score - a.score).slice(0, 3);
-      const weaknesses = indexed.filter(x => x.score <= 5).sort((a, b) => a.score - b.score).slice(0, 3);
+      const weaknesses = indexed.filter(x => x.score < avg).sort((a, b) => a.score - b.score).slice(0, 3);
 
       // 分数表格
       const scoreRow = ABILITY_NAMES.map((_, idx) => {
@@ -1069,18 +1069,14 @@
         </div>
 
         <div class="report-section">
-          <h3>弱势能力分析（得分 ≤ 5 分）</h3>
-          ${weaknesses.length === 0
-            ? '<div class="report-empty">目前没有得分低于 5 分的明显弱势项。建议保持当前节奏，在 6-7 分的项目上继续精进。</div>'
-            : weaknesses.map(x => buildAbilityCard(ABILITIES_DATA[x.index], x.score, "weakness")).join("")}
+          <h3>相对较低的能力</h3>
+          ${weaknesses.map(x => buildAbilityCard(ABILITIES_DATA[x.index], x.score, "weakness")).join("")}
         </div>
 
         <div class="report-section report-goals">
           <h3>近期发展目标</h3>
           <ul>
-            ${weaknesses.length > 0
-              ? `<li><strong>短期（1-3个月）：</strong>重点提升${weaknesses.map(x => ABILITIES_DATA[x.index].key).join("、")}，目标每项提升 1-2 分。</li>`
-              : `<li><strong>短期（1-3个月）：</strong>巩固现有优势，在 6-7 分的中等能力中选择 1 项集中突破。</li>`}
+            <li><strong>短期（1-3个月）：</strong>重点提升${weaknesses.map(x => ABILITIES_DATA[x.index].key).join("、")}，目标每项提升 1-2 分。</li>
             <li><strong>中期（3-6个月）：</strong>将薄弱项全部提升到 6 分以上，优势项保持 8 分以上。</li>
             <li><strong>长期（6-12个月）：</strong>12 项能力均衡发展，平均分达到 7 分以上，形成孩子独特的核心竞争力。</li>
           </ul>
